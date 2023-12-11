@@ -1975,3 +1975,167 @@ Bob is also close to his colleagues at work, and he often goes out for drinks or
 Overall, Bob is a responsible and caring person who values his relationships with his friends and colleagues.
 He is always trying to do the right thing and help those around him, even if it means putting himself out there.
 Despite his concerns about Alice's actions, he remains optimistic and hopeful for the future.[/INST]
+INFO:absl:Using /var/folders/nt/ysxkl8nx59d82ftl5_l_4v140000gn/T/tfhub_modules to cache modules.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:absl:Using /var/folders/nt/ysxkl8nx59d82ftl5_l_4v140000gn/T/tfhub_modules to cache modules.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:absl:Using /var/folders/nt/ysxkl8nx59d82ftl5_l_4v140000gn/T/tfhub_modules to cache modules.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:absl:Using /var/folders/nt/ysxkl8nx59d82ftl5_l_4v140000gn/T/tfhub_modules to cache modules.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:absl:Using /var/folders/nt/ysxkl8nx59d82ftl5_l_4v140000gn/T/tfhub_modules to cache modules.
+INFO:absl:Downloading TF-Hub Module 'https://tfhub.dev/google/universal-sentence-encoder/4'.
+INFO:absl:Downloading https://tfhub.dev/google/universal-sentence-encoder/4: 137.84MB
+INFO:absl:Downloading https://tfhub.dev/google/universal-sentence-encoder/4: 317.84MB
+INFO:absl:Downloading https://tfhub.dev/google/universal-sentence-encoder/4: 497.84MB
+INFO:absl:Downloading https://tfhub.dev/google/universal-sentence-encoder/4: 677.84MB
+INFO:absl:Downloading https://tfhub.dev/google/universal-sentence-encoder/4: 857.84MB
+INFO:absl:Downloaded https://tfhub.dev/google/universal-sentence-encoder/4, Total size: 987.47MB
+INFO:absl:Downloaded TF-Hub Module 'https://tfhub.dev/google/universal-sentence-encoder/4'.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:absl:Using /var/folders/nt/ysxkl8nx59d82ftl5_l_4v140000gn/T/tfhub_modules to cache modules.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:absl:Using /var/folders/nt/ysxkl8nx59d82ftl5_l_4v140000gn/T/tfhub_modules to cache modules.
+INFO:absl:Fingerprint not found. Saved model loading will continue.
+INFO:absl:path_and_singleprint metric could not be logged. Saved model loading will continue.
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+Summarize the following passage in a concise and insightful fashion:
+There is a pub called The Sundrop Saloon.
+Alice stole Bob's car and crashed it.
+Alice, Bob, Charlie and Dorothy always spend their evenings at the Sundrop Saloon.
+Summary:[/INST]
+INFO:ollama:Succeeded after 1 attempts.
+INFO:ollama:Response from LLM: The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Question: Given the following trats:
+responsibility: high; aggression: low
+ create a backstory about a male character called Bob. Write a summary of the person: what their job is, what a typical day is is like, what are their goals, desires, hopes, dreams, and aspirations. Also write about their duties, responsibilities, and obligations. What gives them joy and what are they afraid of. Write about their friends and what they like to do. Also write about their current concerns.Take into account the following context: The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Answer: [/INST]
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Question: Given the following trats:
+responsibility: low; aggression: high
+ create a backstory about a female character called Alice. Write a summary of the person: what their job is, what a typical day is is like, what are their goals, desires, hopes, dreams, and aspirations. Also write about their duties, responsibilities, and obligations. What gives them joy and what are they afraid of. Write about their friends and what they like to do. Also write about their current concerns.Take into account the following context: The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Answer: [/INST]
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Question: Given the following trats:
+responsibility: low; aggression: high
+ create a backstory about a male character called Charlie. Write a summary of the person: what their job is, what a typical day is is like, what are their goals, desires, hopes, dreams, and aspirations. Also write about their duties, responsibilities, and obligations. What gives them joy and what are they afraid of. Write about their friends and what they like to do. Also write about their current concerns.Take into account the following context: The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Answer: [/INST]
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Question: Given the following trats:
+responsibility: medium; aggression: high
+ create a backstory about a female character called Dorothy. Write a summary of the person: what their job is, what a typical day is is like, what are their goals, desires, hopes, dreams, and aspirations. Also write about their duties, responsibilities, and obligations. What gives them joy and what are they afraid of. Write about their friends and what they like to do. Also write about their current concerns.Take into account the following context: The Sundrop Saloon is a pub where Alice, Bob, Charlie and Dorothy often go to spend their evenings. However, one night, Alice stole Bob's car and crashed it, which resulted in her being arrested and charged with theft and reckless driving.
+Answer: [/INST]
+INFO:ollama:Succeeded after 1 attempts.
+INFO:ollama:Response from LLM: Bob is a 35-year-old male who works as an engineer at a local tech company. His job involves designing and developing new technology products, which he finds challenging and exciting. Bob typically wakes up at 6 am every day to start his workday, which involves attending meetings with colleagues, brainstorming ideas, and testing prototypes. After work, he likes to relax by watching sports on TV or playing video games with friends.
+Bob's goals are to continue growing as an engineer and to make a positive impact on the world through his work. He enjoys working with new technologies and strives to push himself to learn more every day. Bob is also passionate about traveling and hopes to visit different countries around the world in the future.
+Bob's responsibilities include ensuring that he meets deadlines, maintains a high level of productivity, and communicates effectively with colleagues. He takes his job seriously and strives to provide the best possible solutions for his clients. Bob is also responsible for managing his time efficiently and prioritizing tasks accordingly.
+Bob enjoys spending time with friends and family, especially when they go out for dinner or watch sports together. However, he can be a little competitive at times, which can sometimes lead to arguments. Bob is also afraid of failing in his job and letting down his colleagues, which can cause him stress and anxiety.
+Bob's current concerns include balancing work with personal life, as he often works late into the night on projects. He also worries about being replaced by newer engineers who have more experience or better qualifications.
+In summary, Bob is a hardworking engineer who enjoys challenging himself and making a positive impact on the world through his work. His responsibilities include meeting deadlines, maintaining productivity, communicating effectively with colleagues, managing time efficiently, and spending time with friends and family. He also has concerns about balancing work with personal life and being replaced by newer engineers.
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+Replace all the pronouns in the following text with the name Bob.
+The text:
+Bob is a 35-year-old male who works as an engineer at a local tech company.
+His job involves designing and developing new technology products, which he finds challenging and exciting.
+Bob typically wakes up at 6 am every day to start his workday, which involves attending meetings with colleagues, brainstorming ideas, and testing prototypes.
+After work, he likes to relax by watching sports on TV or playing video games with friends.
+Bob's goals are to continue growing as an engineer and to make a positive impact on the world through his work.
+He enjoys working with new technologies and strives to push himself to learn more every day.
+Bob is also passionate about traveling and hopes to visit different countries around the world in the future.
+Bob's responsibilities include ensuring that he meets deadlines, maintains a high level of productivity, and communicates effectively with colleagues.
+He takes his job seriously and strives to provide the best possible solutions for his clients.
+Bob is also responsible for managing his time efficiently and prioritizing tasks accordingly.
+Bob enjoys spending time with friends and family, especially when they go out for dinner or watch sports together.
+However, he can be a little competitive at times, which can sometimes lead to arguments.
+Bob is also afraid of failing in his job and letting down his colleagues, which can cause him stress and anxiety.
+Bob's current concerns include balancing work with personal life, as he often works late into the night on projects.
+He also worries about being replaced by newer engineers who have more experience or better qualifications.
+In summary, Bob is a hardworking engineer who enjoys challenging himself and making a positive impact on the world through his work.
+His responsibilities include meeting deadlines, maintaining productivity, communicating effectively with colleagues, managing time efficiently, and spending time with friends and family.
+He also has concerns about balancing work with personal life and being replaced by newer engineers.[/INST]
+INFO:ollama:Succeeded after 1 attempts.
+INFO:ollama:Response from LLM: Alice is a 30-year-old female who works as a secretary at a local law firm. She has been working there for over five years, and her job involves managing schedules, answering phone calls, preparing documents, and assisting attorneys with their cases. Alice enjoys her job and finds it challenging, which keeps her motivated to work hard every day.
+Alice lives in a small apartment near the law firm where she works. She usually wakes up at 6 am and goes for a jog around the neighborhood before heading to work. After work, Alice often meets with friends at the Sundrop Saloon, which is a popular pub in the area. The Sundrop Saloon is known for its live music and delicious food, and Alice enjoys spending her evenings there.
+Alice's goals include finding love and starting a family someday. She wants to travel to different countries and experience new cultures, but she also values stability and security in her life. Alice has dreams of becoming an attorney one day, but for now, she is content with the job she has.
+In terms of responsibilities, Alice takes her job seriously and always tries to do the best she can. She knows that her work affects people's lives, so she strives to make a positive impact wherever possible. However, sometimes she feels overwhelmed by the amount of work that needs to be done, which can lead to stress and anxiety.
+Alice is afraid of losing her job or not being able to find another one if she gets fired. She also worries about failing at something she has worked so hard for, which can cause her to feel anxious and stressed. However, Alice tries to overcome these fears by staying focused on her work and taking care of herself mentally and physically.
+Alice's friends include Bob, Charlie, and Dorothy, who all often go to the Sundrop Saloon together. They enjoy spending time with each other and talking about their lives and experiences. Alice also enjoys going out for dinner or watching movies with her friends on weekends.
+Currently, Alice is concerned about her upcoming trial for theft and reckless driving charges. She knows that she has made some mistakes in the past, but she also believes that she deserves a second chance. However, Alice is worried about what will happen if she gets convicted of a crime, which could have a significant impact on her future career prospects.
+Overall, Alice is a hardworking and dedicated individual who values stability and security in her life. She enjoys spending time with friends and exploring new places, but she also takes her responsibilities seriously and strives to do the best she can at work.
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+Replace all the pronouns in the following text with the name Alice.
+The text:
+Alice is a 30-year-old female who works as a secretary at a local law firm.
+She has been working there for over five years, and her job involves managing schedules, answering phone calls, preparing documents, and assisting attorneys with their cases.
+Alice enjoys her job and finds it challenging, which keeps her motivated to work hard every day.
+Alice lives in a small apartment near the law firm where she works.
+She usually wakes up at 6 am and goes for a jog around the neighborhood before heading to work.
+After work, Alice often meets with friends at the Sundrop Saloon, which is a popular pub in the area.
+The Sundrop Saloon is known for its live music and delicious food, and Alice enjoys spending her evenings there.
+Alice's goals include finding love and starting a family someday.
+She wants to travel to different countries and experience new cultures, but she also values stability and security in her life.
+Alice has dreams of becoming an attorney one day, but for now, she is content with the job she has.
+In terms of responsibilities, Alice takes her job seriously and always tries to do the best she can.
+She knows that her work affects people's lives, so she strives to make a positive impact wherever possible.
+However, sometimes she feels overwhelmed by the amount of work that needs to be done, which can lead to stress and anxiety.
+Alice is afraid of losing her job or not being able to find another one if she gets fired.
+She also worries about failing at something she has worked so hard for, which can cause her to feel anxious and stressed.
+However, Alice tries to overcome these fears by staying focused on her work and taking care of herself mentally and physically.
+Alice's friends include Bob, Charlie, and Dorothy, who all often go to the Sundrop Saloon together.
+They enjoy spending time with each other and talking about their lives and experiences.
+Alice also enjoys going out for dinner or watching movies with her friends on weekends.
+Currently, Alice is concerned about her upcoming trial for theft and reckless driving charges.
+She knows that she has made some mistakes in the past, but she also believes that she deserves a second chance.
+However, Alice is worried about what will happen if she gets convicted of a crime, which could have a significant impact on her future career prospects.
+Overall, Alice is a hardworking and dedicated individual who values stability and security in her life.
+She enjoys spending time with friends and exploring new places, but she also takes her responsibilities seriously and strives to do the best she can at work.[/INST]
+INFO:ollama:Succeeded after 1 attempts.
+INFO:ollama:Response from LLM: Charlie is a 25-year-old male who works as a software engineer at a tech company. His typical day involves working on various projects, attending meetings, and collaborating with his team members. Charlie enjoys coding and solving complex problems in his field. He also loves to travel and explore new places.
+Charlie takes responsibility for his actions seriously and tries to be accountable for any mistakes he makes. However, he can sometimes become aggressive when dealing with difficult situations or people who don't agree with him. Charlie is ambitious and wants to make a significant impact in the tech industry. His goals include developing innovative products that will change the world.
+Charlie loves spending time with his friends, especially at The Sundrop Saloon where he often goes to unwind after a long day of work. He enjoys playing pool, drinking beer and talking about technology-related topics with his friends. However, Charlie is concerned about the increasing use of social media and its impact on society.
+Charlie's current concerns include finding the right balance between work and personal life and maintaining a healthy lifestyle despite working long hours in his field. He also worries about the future of technology and how it will affect humanity as a whole.
+INFO:ollama:Sending prompt to LLM: <s>[INST] <<SYS>>
+Your task is to follow instructions and answer questions correctly and concisely.
+<</SYS>>
+Replace all the pronouns in the following text with the name Charlie.
+The text:
+Charlie is a 25-year-old male who works as a software engineer at a tech company.
+His typical day involves working on various projects, attending meetings, and collaborating with his team members.
+Charlie enjoys coding and solving complex problems in his field.
+He also loves to travel and explore new places.
+Charlie takes responsibility for his actions seriously and tries to be accountable for any mistakes he makes.
+However, he can sometimes become aggressive when dealing with difficult situations or people who don't agree with him.
+Charlie is ambitious and wants to make a significant impact in the tech industry.
+His goals include developing innovative products that will change the world.
+Charlie loves spending time with his friends, especially at The Sundrop Saloon where he often goes to unwind after a long day of work.
+He enjoys playing pool, drinking beer and talking about technology-related topics with his friends.
+However, Charlie is concerned about the increasing use of social media and its impact on society.
+Charlie's current concerns include finding the right balance between work and personal life and maintaining a healthy lifestyle despite working long hours in his field.
+He also worries about the future of technology and how it will affect humanity as a whole.[/INST]
