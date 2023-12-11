@@ -23,24 +23,47 @@ models. arXiv preprint arXiv:2108.08877.
 from collections.abc import Callable
 
 import numpy as np
+
 import tensorflow as tf
 import tensorflow_hub as hub
-import tensorflow_text
 
-DEFAULT_ENCODER_URL = "https://tfhub.dev/google/sentence-t5/st5-base/1"
+# import tensorflow_text
 
-# `import tensorflow_text` required for embedder to work
-# See https://github.com/tensorflow/tensorflow/issues/38597
-del tensorflow_text
+ST5 = False
 
+if ST5:
+    DEFAULT_ENCODER_URL = "https://tfhub.dev/google/sentence-t5/st5-base/1"
 
-class EmbedderST5(Callable):
-  """Embeds text using ST5."""
+    # `import tensorflow_text` required for embedder to work
+    # See https://github.com/tensorflow/tensorflow/issues/38597
+    # del tensorflow_text
 
-  def __init__(self, hub_url=DEFAULT_ENCODER_URL):
-    self._encoder = hub.KerasLayer(hub_url)
+    class EmbedderST5(Callable):
+        """Embeds text using ST5."""
 
-  def __call__(self, text: str) -> np.ndarray:
-    english_sentences = tf.constant([text])
-    (batched_embedding,) = self._encoder(english_sentences)
-    return np.squeeze(batched_embedding.numpy())
+        def __init__(self, hub_url=DEFAULT_ENCODER_URL):
+            self._encoder = hub.KerasLayer(hub_url)
+
+        def __call__(self, text: str) -> np.ndarray:
+            english_sentences = tf.constant([text])
+            (batched_embedding,) = self._encoder(english_sentences)
+            return np.squeeze(batched_embedding.numpy())
+
+else:
+    # URL for Universal Sentence Encoder on TensorFlow Hub
+    DEFAULT_ENCODER_URL = "https://tfhub.dev/google/universal-sentence-encoder/4"
+
+    class EmbedderST5(Callable):
+        """Embeds text using Universal Sentence Encoder."""
+
+        def __init__(self, hub_url=DEFAULT_ENCODER_URL):
+            # Load the model as a Keras Layer
+            self._encoder = hub.KerasLayer(hub_url)
+
+        def __call__(self, text: str) -> np.ndarray:
+            # Process the input text
+            english_sentences = tf.constant([text])
+            # Generate embeddings for the input
+            embeddings = self._encoder(english_sentences)
+            # Convert the embeddings to a NumPy array and remove extra dimensions
+            return np.squeeze(embeddings.numpy())
