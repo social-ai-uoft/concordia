@@ -68,6 +68,8 @@ setuptools.setup(
         #'tensorflow-text',
         "termcolor",
         "typing-extensions",
+        "langchain",
+        "ipykernel"
     ],
     extras_require={
         # Used in development.
