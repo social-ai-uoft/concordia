@@ -86,6 +86,10 @@ class SituationPerception(component.Component):
         max_characters=3000,
         max_tokens=1000,
     )
+
+    if len(self._state) == 0:
+      raise ValueError('Situation perception component returned empty state.')
+
     self._state = f'{self._agent_name} is currently {self._state}'
 
     self._last_chain = prompt

@@ -99,6 +99,9 @@ class PersonBySituation(component.Component):
         max_tokens=1000,
     )
 
+    if len(self._state) == 0:
+        raise ValueError('Person by situation component returned empty state.')
+
     self._state = f'{self._agent_name} would {self._state}'
 
     self._last_chain = prompt

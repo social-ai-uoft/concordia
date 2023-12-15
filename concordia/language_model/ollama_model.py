@@ -73,7 +73,7 @@ class OllamaLanguageModel(language_model.LanguageModel):
         message = prompt
         prompt = PROMPT_TEMPLATE.substitute(system_message=system_message, message=message)
 
-        logger.info(f"Sending prompt to LLM: {prompt}")
+        logger.info(f"LLM INPUT: {prompt}")
         for retry in range(_MAX_SAMPLE_TEXT_ATTEMPTS): 
             try:
                 response = self._client(
@@ -88,7 +88,7 @@ class OllamaLanguageModel(language_model.LanguageModel):
                     raise language_model.InvalidResponseError(prompt)
             else:
                 logger.info(f"Succeeded after {retry+1} attempts.")
-                logger.info(f"Response from LLM: {response}")
+                logger.info(f"LLM RESPONSE: {response}")
                 break
 
         if self._measurements is not None:
@@ -121,7 +121,7 @@ class OllamaLanguageModel(language_model.LanguageModel):
             sample = self.sample_text(
                 prompt,
                 max_characters=max_characters,
-                temperature=0.1,
+                temperature=0.0,
                 seed=seed,
                 system_message=MULTIPLE_CHOICE_SYSTEM_MESSAGE,
             )

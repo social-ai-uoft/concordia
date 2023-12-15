@@ -146,7 +146,8 @@ class InteractiveDocument(document.Document):
       answer_suffix: str = '',
       max_tokens: int = DEFAULT_MAX_TOKENS,
       max_characters: int = DEFAULT_MAX_CHARACTERS,
-      terminators: Collection[str] = ('\n',),
+      # terminators: Collection[str] = ('\n',),
+      terminators: Collection[str] = (),
   ) -> str:
     """Asks the agent an open question and appends it to the document.
 

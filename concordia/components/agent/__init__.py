@@ -22,8 +22,10 @@ from concordia.components.agent import characteristic
 from concordia.components.agent import identity
 from concordia.components.agent import observation
 from concordia.components.agent import person_by_situation
+from concordia.components.agent import mood_by_situation
 from concordia.components.agent import plan
 from concordia.components.agent import reflection
 from concordia.components.agent import self_perception
 from concordia.components.agent import situation_perception
 from concordia.components.agent import somatic_state
+from concordia.components.agent import tic_tac_toe_component

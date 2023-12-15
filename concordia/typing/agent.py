@@ -53,17 +53,19 @@ DEFAULT_CALL_TO_SPEECH = (
     'or Ichabod says: "I wonder if the alfalfa is ready to harvest.\n'
 )
 
-DEFAULT_CALL_TO_ACTION = (
-    'What would {agent_name} do for the next'
-    ' {timedelta} to best achieve their goal? Consider their'
-    ' plan, but deviate from it if necessary. '
-    'Give a specific activity. Pick an activity that '
-    'would normally take about {timedelta} to complete. '
-    'If the selected action has a direct or indirect object then it '
-    'must be specified explicitly. For example, it is valid to respond '
-    'with "{agent_name} votes for Caroline because..." but not '
-    'valid to respond with "{agent_name} votes because...".'
-)
+# DEFAULT_CALL_TO_ACTION = (
+#     'What would {agent_name} do for the next'
+#     ' {timedelta} to best achieve their goal? Consider their'
+#     ' plan, but deviate from it if necessary. '
+#     'Give a specific activity. Pick an activity that '
+#     'would normally take about {timedelta} to complete. '
+#     'If the selected action has a direct or indirect object then it '
+#     'must be specified explicitly. For example, it is valid to respond '
+#     'with "{agent_name} votes for Caroline because..." but not '
+#     'valid to respond with "{agent_name} votes because...".'
+# )
+
+DEFAULT_CALL_TO_ACTION = "What would {agent_name} do next?"
 
 
 DEFAULT_ACTION_SPEC = ActionSpec(

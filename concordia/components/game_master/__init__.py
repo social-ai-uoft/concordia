@@ -22,3 +22,4 @@ from concordia.components.game_master import player_status
 from concordia.components.game_master import relevant_events
 from concordia.components.game_master import schedule
 from concordia.components.game_master import time_display
+from concordia.components.game_master import tic_tac_toe_gm
