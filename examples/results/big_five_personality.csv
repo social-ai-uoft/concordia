@@ -1,0 +1,13 @@
+Conscientiousness,Agreeableness,Emotional Stability,Openness to Experience,Extraversion
+9.5,9.5,9.0,10.0,9.5
+agent_name,agent_id,question,answer,correct_answer
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Extraverted, enthusiastic'",5,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Critical, quarrelsome'",0,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Dependable, self-disciplined'",5,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Anxious, easily upset'",1,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Open to new experiences, complex'",6,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Reserved, quiet'",0,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Sympathetic, warm'",5,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Disorganized, careless'",0,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Calm, emotionally stable'",5,0
+Alice,1000,"From 1 to 7, rate how much you see yourself as 'Conventional, uncreative'",1,0

@@ -1,0 +1,102 @@
+{
+	"questions": [{
+		"question": " What social media platform, founded in 2004 by Mark Zuckerberg, quickly rose to become one of the most significant online social networks?",
+		"options": [
+			"Instagram",
+			"Twitter",
+			"Facebook",
+			"Snapchat"
+		],
+		"correct_answer":  2
+	},
+	{
+		"question": "In 2008, which country hosted the Summer Olympics, showcasing a spectacular opening ceremony directed by filmmaker Zhang Yimou?",
+		"options": [
+			"Brazil",
+			"China",
+			"United Kingdom",
+			"Greece"
+		],
+		"correct_answer": 1
+	},
+	{
+		"question": "The Higgs boson, a fundamental particle predicted by the Standard Model of particle physics, was confirmed by scientists at CERN in which year?",
+		"options": [
+			"2008",
+			"2012",
+			"2015",
+			"2017"
+		],
+		"correct_answer": 1
+	},
+	{
+		"question": "Which global event, initially identified in Wuhan, China, in late 2019, led to a worldwide pandemic declared by the WHO in 2020?",
+		"options": [
+			"H1N1 Influenza",
+			"COVID-19",
+			"Ebola Virus Outbreak",
+			"Zika Virus Epidemic"
+		],
+		"correct_answer": 1
+	},
+	{
+		"question": "In 2016, a country voted to leave the European Union, an event commonly referred to as:",
+		"options": [
+			"Frexit",
+			"Nexit",
+			"Grexit",
+			"Brexit"
+		],
+		"correct_answer": 3
+	},
+	{
+		"question": "The iPhone, a revolutionary smartphone that changed the way people communicate and access information, was first released by Apple in:",
+		"options": [
+			"2005",
+			"2007",
+			"2009",
+			"2011"
+		],
+		"correct_answer": 1
+	},
+	{
+		"question": "Which movie, released in 2009, became the highest-grossing film of all time until 2019 and was notable for its groundbreaking use of 3D technology?",
+		"options": [
+			"Titanic",
+			"Avatar",
+			"Avengers: Endgame",
+			"Star Wars: The Force Awakens"
+		],
+		"correct_answer": 1
+	},
+	{
+		"question": "The Paris Agreement, a landmark international accord to combat climate change, was signed in what year?",
+		"options": [
+			"2014",
+			"2015",
+			"2016",
+			"2017"
+		],
+		"correct_answer": 2
+	},
+	{
+		"question": "In 2018, which Asian country held a historic summit with South Korea, marking a significant step in diplomatic relations?",
+		"options": [
+			"China",
+			"Japan",
+			"North Korea",
+			"Vietnam"
+		],
+		"correct_answer": 2
+	},
+	{
+		"question": "Elon Musk's SpaceX achieved a significant milestone in space exploration by launching and landing the first reusable orbital rocket, the Falcon 9, in:",
+		"options": [
+			"2012",
+			"2015",
+			"2018",
+			"2020"
+		],
+		"correct_answer": 0
+	}]
+}

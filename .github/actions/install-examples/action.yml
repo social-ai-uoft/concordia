@@ -1,0 +1,23 @@
+name: install-examples
+
+runs:
+  using: composite
+  steps:
+    - name: Install Concordia
+      uses: ./.github/actions/install-concordia
+
+    - name: Install requirements for examples
+      shell: bash
+      run: pip install -r examples/requirements.txt
+
+    - name: Show installed dependencies
+      shell: bash
+      run: pip list
+
+    - name: Convert notebooks
+      shell: bash
+      run: |
+        jupyter nbconvert --to=python --output-dir=notebooks \
+            --RegexRemovePreprocessor.patterns='!pip' \
+            $(find examples -type f -iname '*.ipynb')
+        ls notebooks/*.py
