@@ -80,6 +80,7 @@ class QuizMetric(component.Component):
                     f"Question: {question['question']}\n{self._player_name}'s answer: {question['options'][agent_answer]}\nCorrect answer: {question['options'][question['correct_answer']]}\n"
                 )
 
+
             if agent_answer == question["correct_answer"]:
                 num_correct += 1
 

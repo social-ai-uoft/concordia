@@ -71,17 +71,6 @@
         "correct_answer": 1
       },
       {
-        "question": "Which of the following is an example of a dynamic data structure?",
-        "options": [
-          "Array",
-          "Linked List",
-          "Static Array",
-          "Tuple",
-          "Fixed-size Matrix"
-        ],
-        "correct_answer": 1
-      },
-      {
         "question": "The introduction of PCSK9 inhibitors is a significant advancement in the treatment of:",
         "options": [
           "Hypertension",
@@ -102,7 +91,7 @@
         "correct_answer": 2
       },
       {
-        "question": "Biologic DMARDs (Disease-Modifying Antirheumatic Drugs) used in rheumatology primarily act by:",
+        "question": "Biologic DMARDs, or Disease-Modifying Antirheumatic Drugs, used in rheumatology primarily act by:",
         "options": [
           "Inhibiting cyclooxygenase enzymes",
           "Stimulating cartilage growth",

@@ -16,7 +16,7 @@ import re
 logging.basicConfig(level=logging.INFO, filename='ollama.log')
 logger = logging.getLogger('ollama')
 
-_MAX_MULTIPLE_CHOICE_ATTEMPTS = 3
+_MAX_MULTIPLE_CHOICE_ATTEMPTS = 7
 _MAX_SAMPLE_TEXT_ATTEMPTS = 5
 
 # PROMPT_TEMPLATE = Template("""<s>[INST] <<SYS>>\n$system_message\n<</SYS>>\n$message[/INST]""")

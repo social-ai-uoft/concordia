@@ -54,7 +54,7 @@ def generate_names(model: language_model.LanguageModel, gender: str, country: st
     
     attempts = 0
     names = '\n\n\n\n'
-    while ',' not in names.split('\n')[3]:
+    while ',' not in names.split('\n')[2]:
         attempts += 1
         if attempts > 4:
             raise language_model.InvalidResponseError(question)
@@ -65,7 +65,7 @@ def generate_names(model: language_model.LanguageModel, gender: str, country: st
         )
         
 
-    return names.split('\n')[3].replace('.', '').split(',')
+    return names.split('\n')[2].replace('.', '').split(',')
 
 class QuizAgent():
     """Agent for completing trivia quizzes."""
