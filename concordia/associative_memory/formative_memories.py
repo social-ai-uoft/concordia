@@ -99,7 +99,7 @@ class FormativeMemoryFactory:
     if context:
       prompt.statement(context)
     question = (
-        f'Given the following trats:\n{str(traits_description)}'
+        f'Given the following traits:\n{str(traits_description)}'
         f'\n create a backstory about a {gender} character called {name}.'
         ' Write a summary of the person:'
         ' what their job is, what a typical day is is like, what are their'

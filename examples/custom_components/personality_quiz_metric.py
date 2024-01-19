@@ -46,13 +46,13 @@ class QuizMetric(component.Component):
         self._player_name = agent.name
         self._player_id = agent.agent_id
         self._traits = agent.traits
-        self._results = []
         # self._scale = scale
         self._measurements = measurements
         self._channel = channel
 
         self._timestep = 0
-
+        self._results = [] #[name, agent_id, question, answer]
+        self._personality_scores = []
         # Load the exam
         with open(exam_json_path, "r") as f:
             self._exam = json.load(f)
@@ -63,13 +63,22 @@ class QuizMetric(component.Component):
         """See base class."""
         return self._name
 
-    def observe(self, observation: str, return_data = False) -> list[str] | None:
+    def observe(self, observation: str, return_data = False) -> None:
         """See base class."""
         num_correct = 0
+        conscientiousness = []
+        agreeableness = []
+        emotionalstability = []
+        openness = []
+        extraversion = []
 
-        question_number = 1
+
         # Iterate over the list of questions and ask them one by one
-        for question in self._exam["questions"]:
+
+        # for question in self._exam["questions"]:
+        for i in range(len(self._exam["questions"])):
+            question_num = i + 1
+            question = self._exam["questions"][i]
             doc = interactive_document.InteractiveDocument(self._model)
             agent_answer = doc.multiple_choice_question(
                 f"{observation}\n{question['question']}", question["options"]
@@ -79,17 +88,56 @@ class QuizMetric(component.Component):
                 print(
                     f"Question: {question['question']}\n{self._player_name}'s answer: {question['options'][agent_answer]}\nCorrect answer: {question['options'][question['correct_answer']]}\n"
                 )
+                print(agent_answer)
 
             if agent_answer == question["correct_answer"]:
                 num_correct += 1
 
-            self.update_results(question, question_number, agent_answer)
+        # SARAH XU: Added a TIPI Scoring logic
+            if question_num == 1:
+                extraversion.append(agent_answer + 1)
+            elif question_num == 2:
+                agreeableness.append(agent_answer + 1)
+            elif question_num == 3:
+                conscientiousness.append(agent_answer + 1)
+            elif question_num == 4:
+                emotionalstability.append(agent_answer + 1)
+            elif question_num == 5:
+                openness.append(agent_answer + 1)
+            elif question_num == 6:
+                extraversion.append(agent_answer + 1)
+            elif question_num == 7:
+                agreeableness.append(agent_answer + 1)
+            elif question_num == 8:
+                conscientiousness.append(agent_answer + 1)
+            elif question_num == 9:
+                emotionalstability.append(agent_answer + 1)
+            elif question_num == 10:
+                openness.append(agent_answer + 1)
+            
+        conscientiousness_score = conscientiousness[0] + (8 - conscientiousness[1]) / 2
+        agreeableness_score = agreeableness[1] + (8 - agreeableness[0]) / 2
+        emotionalstability_score = emotionalstability[1] + (8 - emotionalstability[0]) / 2
+        openness_score = openness[0] + (8 - openness[1]) / 2
+        extraversion_score = extraversion[0] + (8 - extraversion[1]) / 2
 
-            question_number += 1
+        self._personality_scores = [conscientiousness_score,
+                                   agreeableness_score,
+                                   emotionalstability_score,
+                                   openness_score,
+                                   extraversion_score]
+        print(f"Conscientiousness Score: {conscientiousness_score}")
+        print(f"Agreeableness Score: {agreeableness_score}")
+        print(f"Emotional Stability Score: {emotionalstability_score}")
+        print(f"Openness to Experience Score: {openness_score}")
+        print(f"Extraversion Score: {extraversion_score}")
 
         answer_str = (
             f"Agent scored {num_correct}/{len(self._exam['questions'])} on quiz."
         )
+
+        self._results = [self._player_id, self._player_name, openness_score, conscientiousness_score, extraversion_score, agreeableness_score, emotionalstability_score]
+        self._results.extend([trait.split(':')[1].strip() for trait in self._traits.split(';')])
 
         datum = {
             "time_str": self._clock.now().strftime("%H:%M:%S"),
@@ -104,35 +152,26 @@ class QuizMetric(component.Component):
 
         datum["time"] = self._clock.now()
 
-        if self._verbose:
-            print(f"{self._name} of {self._player_name}: {answer_str}")
+        # if self._verbose:
+        #     print(f"{self._name} of {self._player_name}: {answer_str}")
         self._timestep += 1
 
         if return_data:
             return self.get_results()
+
+
+    def get_results(
+        self,
+    ) -> list:
+        return self._results
+    
+    def get_personality_scores(
+        self,
+    ) -> list:
+        return self._personality_scores
 
     def state(
         self,
     ) -> str | None:
         """Returns the current state of the component."""
         return ""
-    
-    def update_results(
-        self,
-        question,
-        question_number,
-        agent_answer
-    ) -> str:
-        
-
-        answer = question['options'][agent_answer]
-        correct = question['options'][question['correct_answer']]
-
-        update = f'{self._player_id}, {self._player_name}, {self._traits}, {question_number}, {answer}, {correct}'
-
-        self._results.append(update)
-
-    def get_results(
-        self
-    ) -> list[str]:
-        return self._results

@@ -1,0 +1,135 @@
+{
+    "questions": [
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Extraverted, enthusiastic'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Critical, quarrelsome'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Dependable, self-disciplined'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Anxious, easily upset'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Open to new experiences, complex'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Reserved, quiet'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Sympathetic, warm'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Disorganized, careless'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Calm, emotionally stable'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "From 1 to 7, where 1 is 'Disagree strongly' and 7 is 'Agree strongly', rate how much you see yourself as 'Conventional, uncreative'",
+        "options": [
+            "1: Disagree strongly",
+            "2: Disagree moderately",
+            "3: Disagree a little",
+            "4: Neither agree nor disagree",
+            "5: Agree a little",
+            "6: Agree somewhat",
+            "7: Agree strongly"
+        ],
+        "correct_answer": 0
+      }
+    ]
+  }
+  
