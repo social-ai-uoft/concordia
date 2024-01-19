@@ -100,6 +100,8 @@ class QuizMetric(component.Component):
         if self._verbose:
             print(f"{self._name} of {self._player_name}: {answer_str}")
         self._timestep += 1
+        
+        return (num_correct/len(self._exam['questions']))
 
     def state(
         self,
