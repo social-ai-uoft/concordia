@@ -103,11 +103,17 @@ class OllamaLanguageModel(language_model.LanguageModel):
 
     @staticmethod
     def extract_choices(text):
-        match = re.search(r'\(?(\w)\)', text)
+        # Letter enclosed within two parentheses
+        match = re.search(r'\((\w)\)', text)
         if match:
             return match.group(1)
         else:
-            return None
+            # Initial letter followed by right parenthesis
+            match = re.search(r'^\s?(\w)\)', text)
+            if match:
+                return match.group(1)
+            else:
+                return None
 
     @override
     def sample_choice(
@@ -129,9 +135,6 @@ class OllamaLanguageModel(language_model.LanguageModel):
                 system_message=MULTIPLE_CHOICE_SYSTEM_MESSAGE,
             )
             answer = self.extract_choices(sample)
-            # Sarah Xu: Added print statements on 01/18/23 to view raw response
-            print(f"Answer: {answer}")
-            print(f"Sample: {sample}")
             try:
                 idx = responses.index(answer)
             except ValueError:
