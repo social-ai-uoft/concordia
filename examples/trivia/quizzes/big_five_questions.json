@@ -1,0 +1,135 @@
+{
+    "questions": [
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Extraverted, enthusiastic'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Critical, quarrelsome'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Dependable, self-disciplined'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Anxious, easily upset'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Open to new experiences, complex'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Reserved, quiet'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Sympathetic, warm'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Disorganized, careless'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Calm, emotionally stable'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "Given the following options, please choose the letter that corresponds with your rating of how much you agree with the statement that you see yourself as 'Conventional, uncreative'",
+        "options": [
+            "Disagree strongly",
+            "Disagree moderately",
+            "Disagree a little",
+            "Neither agree nor disagree",
+            "Agree a little",
+            "Agree somewhat",
+            "Agree strongly"
+        ],
+        "correct_answer": 0
+      }
+    ]
+  }
+  
