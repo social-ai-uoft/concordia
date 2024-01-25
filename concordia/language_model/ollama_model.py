@@ -130,8 +130,6 @@ class OllamaLanguageModel(language_model.LanguageModel):
             )
             answer = self.extract_choices(sample)
             # Sarah Xu: Added print statements on 01/18/23 to view raw response
-            print(f"Answer: {answer}")
-            print(f"Sample: {sample}")
             try:
                 idx = responses.index(answer)
             except ValueError:
