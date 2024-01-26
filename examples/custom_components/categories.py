@@ -46,15 +46,28 @@ class CategoryConcept(component.Component):
 
       # Multiple choice question
       prompt = interactive_document.InteractiveDocument(self._model)
-      answer = prompt.multiple_choice_question(
-        question=f'\n{observation}\n{question["question"]}',
-        answers=question["options"]
+
+      letters = ['a', 'b', 'c', 'd']
+      options = '\n'.join([f'({letters[i]}) {question["options"][i]}' for i in range(len(question["options"]))])
+      answer = prompt.open_question(
+        question=f'\n{observation}\n{question["question"]}\n\nOptions: {options}\nAfter selecting your choice, please explain why you chose it.',
+        terminators=[]
       )
-      
+
       if self._verbose:
         print(
-          termcolor.colored(f'Question: {question["question"]}\nAnswer: {question["options"][answer]}', color='blue'), end = '\n'
+          termcolor.colored(f'Question: {question["question"]}\nAnswer: {answer}\n', color='blue'), end = '\n'
         )
+
+      # answer = prompt.multiple_choice_question(
+      #   question=f'\n{observation}\n{question["question"]}',
+      #   answers=question["options"]
+      # )
+      
+      # if self._verbose:
+      #   print(
+      #     termcolor.colored(f'Question: {question["question"]}\nAnswer: {question["options"][answer]}', color='blue'), end = '\n'
+      #   )
 
     # self._last_chain = prompt
     # if self._verbose:
