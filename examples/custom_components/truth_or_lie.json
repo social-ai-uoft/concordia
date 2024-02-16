@@ -1,0 +1,28 @@
+{
+  "questions": [
+    {
+      "question": "1 + 1 = 2",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 0
+    },
+    {
+      "question": "Red is a color",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 0
+    },
+    {
+      "question": "Earth is flat",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 1
+    }
+  ]
+}
