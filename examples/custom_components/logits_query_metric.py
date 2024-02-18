@@ -60,10 +60,13 @@ class LogitsQueryMetric(component.Component):
             self._exam = json.load(f)
     
         assert query is not None, "Query must be provided"
-        self._query = []
-        for q in query:
-            self._query.append((q, self._model._tokenizer.encode(q)[0]))
+        self._query = {}
+        for i in range(len(query)):
+            # self._query.append(query[i], self._model._tokenizer.encode(query[i]), 0)
+            self._query[query[i]] = {"token": self._model._tokenizer.encode(query[i]), "index": i}
 
+        # NOTE: self._query is a dictionary of {"word": {"token": token, "index": index in question json}}
+    
     def name(
         self,
     ) -> str:
@@ -72,32 +75,47 @@ class LogitsQueryMetric(component.Component):
 
     def observe(self, observation: str) -> None:
         """See base class."""
+
+        num_correct = 0
         for i in range(len(self._exam["questions"])):
             question = self._exam["questions"][i]
 
             agent_answer = self._model.sample_text(
                 prompt=f"{observation}\n{question['question']}",
             )
-            next_token_probs = torch.softmax(agent_answer, -1)
+            
+            # Agent answer is a tuple of (batch_size, vocab_size) tensors for each output token.
+            # Assume the answer will be the first token
+            # NOTE: If the answer is not at the first token, the probs for all query words might be similar
 
+            # Get the probabilities of every query word in the agent's answer
+            next_token_probs = torch.softmax(agent_answer[0], -1).squeeze(0)
             probs = {}
-            for word, token in self._query:
-                probs[word] = next_token_probs[token].item()
+            for word in self._query:
+                probs[word] = next_token_probs[self._query[word]["token"]].item()
 
             # Normalize the probabilities
             total = sum(probs.values())
             for word in probs:
-                probs[word] = probs[word] / total
+                probs[word] = round(probs[word] / total, 4)
+            
+            # Select the word with the highest probability as the answer
+            answer = max(probs, key=probs.get)
 
+            # If the index of answer in query matches to question["correct_answer"], then the answer is correct
+            # Just search using answer is enough
+            if self._query[answer]["index"] == question["correct_answer"]:
+                num_correct += 1
+            
             if self._verbose:
                 print(
-                    f"To the question {question['question']}, the agent answered\n {probs}"
+                    f"To the question {question['question']}, the agent answered \"{answer}\", the probs are {probs}"
                 )
             
             self._results.append([self._player_name, 1000, question['question'], probs, question["correct_answer"]])
 
         answer_str = (
-            f"Agent completed the quiz."
+            f"Agent completed the quiz. {num_correct} out of {len(self._exam['questions'])} questions are correct."
         )
 
         datum = {

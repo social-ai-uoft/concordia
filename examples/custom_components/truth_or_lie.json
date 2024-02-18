@@ -23,6 +23,46 @@
           "no"
       ],
       "correct_answer": 1
+    },
+    {
+      "question": "There are 365 days in a year",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 0
+    },
+    {
+      "question": "There aren't 365 days in a year",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 1
+    },
+    {
+      "question": "The sum of the angles of a triangle is 180 degrees",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 0
+    },
+    {
+      "question": "The printing press was invented in the 13th century",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 1
+    },
+    {
+      "question": "The melting point of carbon is around 3500 degrees Celsius",
+      "options": [
+          "yes",
+          "no"
+      ],
+      "correct_answer": 0
     }
   ]
 }

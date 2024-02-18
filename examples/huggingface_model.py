@@ -51,6 +51,8 @@ class HuggingFaceLanguageModel(language_model.LanguageModel):
           model_name: The language model to use.
           measurements: The measurements object to log usage statistics to.
           channel: The channel to write the statistics to.
+          logits: Whether to return logits instead of text. 
+            - Returned logits is a tuple of (batch_size, vocab_size) tensors for each output token.
         """
         self._model_name = model_name
         self._measurements = measurements
@@ -58,16 +60,20 @@ class HuggingFaceLanguageModel(language_model.LanguageModel):
 
         assert precision in (4, 8, 16, 32), "Precision must be 4, 8, 16, or 32"
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         # NOTE: precision of float16 can only be used with GPU
         if precision == 4:
-            self._client = AutoModelForCausalLM.from_pretrained(model_name, load_in_4bit=True)
+            self._client = AutoModelForCausalLM.from_pretrained(model_name, load_in_4bit=True, cache_dir="./huggingface_models/")
         elif precision == 8:
-            self._client = AutoModelForCausalLM.from_pretrained(model_name, load_in_8bit=True)
+            self._client = AutoModelForCausalLM.from_pretrained(model_name, load_in_8bit=True, cache_dir="./huggingface_models/")
         elif precision == 16:
-            self._client = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16).to(0)
+            self._client = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16, cache_dir="./huggingface_models/", local_files_only = True).to(device)
         else:
-            self._client = AutoModelForCausalLM.from_pretrained(model_name)
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name)
+            self._client = AutoModelForCausalLM.from_pretrained(model_name, cache_dir="./huggingface_models/", local_files_only = True).to(device)
+
+        print(f"Using device: {self._client.device}")
+        self._tokenizer = AutoTokenizer.from_pretrained(model_name, torch_dtype=torch.float16)
         self._logits = logits
 
     @override   
@@ -90,18 +96,21 @@ class HuggingFaceLanguageModel(language_model.LanguageModel):
         logger.debug(f"Sending prompt to LLM: {prompt}")
         for retry in range(_MAX_SAMPLE_TEXT_ATTEMPTS): 
             try:
-                inputs = self._tokenizer(prompt, return_tensors="pt")
+                inputs = self._tokenizer(prompt, return_tensors="pt").to(self._client.device)
                 outputs = self._client(**inputs)
                 
                 if self._logits:
-                    outputs = self._client(**inputs)
+                    outputs = self._client.generate(**inputs, max_new_tokens=max_tokens, temperature=temperature, seed=seed, return_dict_in_generate=True, output_scores=True)
                     
-                    # Log word response
-                    token_outputs = self._client.generate(**inputs, max_new_tokens=max_tokens, temperature=temperature, seed=seed)
-                    word_response = self._tokenizer.decode(token_outputs[0], skip_special_tokens=True)
-                    print(f"Word response: {word_response}")
+                    tokens = outputs.sequences[0]
+                    logits = outputs.scores
+                    
+                    word_response = self._tokenizer.decode(tokens, skip_special_tokens=True)
+                    response = logits
 
-                    response = outputs.logits[0, -1, :]
+                    # print("To the prompt: \n", prompt)
+                    # print("The response is: \n", word_response + "\n")
+                    # print("End of response")
                 else:
                     outputs = self._client.generate(**inputs, max_new_tokens=max_tokens, temperature=temperature, seed=seed)
                     response = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
