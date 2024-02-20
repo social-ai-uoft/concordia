@@ -68,12 +68,12 @@ class HuggingFaceLanguageModel(language_model.LanguageModel):
         elif precision == 8:
             self._client = AutoModelForCausalLM.from_pretrained(model_name, load_in_8bit=True, cache_dir="./huggingface_models/")
         elif precision == 16:
-            self._client = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16, cache_dir="./huggingface_models/", local_files_only = True).to(device)
+            self._client = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16, cache_dir="./huggingface_models/").to(device)
         else:
-            self._client = AutoModelForCausalLM.from_pretrained(model_name, cache_dir="./huggingface_models/", local_files_only = True).to(device)
+            self._client = AutoModelForCausalLM.from_pretrained(model_name, cache_dir="./huggingface_models/").to(device)
 
         print(f"Using device: {self._client.device}")
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name, torch_dtype=torch.float16)
+        self._tokenizer = AutoTokenizer.from_pretrained(model_name)
         self._logits = logits
 
     @override   
@@ -100,12 +100,14 @@ class HuggingFaceLanguageModel(language_model.LanguageModel):
                 outputs = self._client(**inputs)
                 
                 if self._logits:
-                    outputs = self._client.generate(**inputs, max_new_tokens=max_tokens, temperature=temperature, seed=seed, return_dict_in_generate=True, output_scores=True)
-                    
+                    # outputs = self._client.generate(**inputs, max_new_tokens=max_tokens, temperature=temperature, seed=seed, return_dict_in_generate=True, output_scores=True)
+                    outputs = self._client.generate(**inputs, max_new_tokens=256, temperature=0.8, seed=seed, return_dict_in_generate=True, output_scores=True, top_p=0.9, do_sample=False)
                     tokens = outputs.sequences[0]
                     logits = outputs.scores
+
+                    # print("Model tokens is ", tokens)
                     
-                    word_response = self._tokenizer.decode(tokens, skip_special_tokens=True)
+                    word_response = self._tokenizer.decode(tokens)
                     response = logits
 
                     # print("To the prompt: \n", prompt)
