@@ -9,6 +9,7 @@ from collections.abc import Collection, Sequence
 from string import Template
 from typing_extensions import override
 
+import termcolor
 import logging
 import re
 
@@ -103,11 +104,20 @@ class OllamaLanguageModel(language_model.LanguageModel):
 
     @staticmethod
     def extract_choices(text):
-        match = re.search(r'\(?(\w)\)', text)
+        print(termcolor.colored(text, color="blue"))
+        # Letter enclosed within two parentheses
+        match = re.search(r'\((\w)\)', text)
+        print(termcolor.colored(match, color="blue"))
         if match:
             return match.group(1)
         else:
-            return None
+            # Initial letter followed by right parenthesis
+            match = re.search(r'\s*?([a-z])\)', text)
+            print(termcolor.colored(match, color="light_blue"))
+            if match:
+                return match.group(1)
+            else:
+                return None
 
     @override
     def sample_choice(
@@ -130,6 +140,9 @@ class OllamaLanguageModel(language_model.LanguageModel):
             )
             answer = self.extract_choices(sample)
             # Sarah Xu: Added print statements on 01/18/23 to view raw response
+            # print(f"{prompt}{sample}")
+            print(termcolor.colored(f"Attempt #: {attempts}\n{sample}", color="green"))
+            print(termcolor.colored(re.search(r'\s*?([a-z])\)', sample), color="green"))
             try:
                 idx = responses.index(answer)
             except ValueError:
