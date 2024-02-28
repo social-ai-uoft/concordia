@@ -1,1 +1,105 @@
-
+{
+    "questions": [
+      {
+        "question": "I really like dancing.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "I give people handmade gifts.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "I leave nice notes for people.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "i take lots of pictures of my activities.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "I bake sweets for just myseld sometimes.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "I decorate my things (e.g. stickers on laptop)",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "I jump up and down in excitement sometimes.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+        "correct_answer": 1
+      },
+      {
+        "question": "I wear a blanket around the house.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "I have kept a personal journal.",
+        "options": [
+          "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
+        ],
+      },
+      {
+        "question": "I think horoscopes are fun.",
+        "options": [
+          "They stimulate the production of white blood cells.",
+          "They promote angiogenesis in tumor cells.",
+          "They block a protein that prevents T cells from attacking cancer cells.",
+          "They decrease the metabolic rate of cancer cells."
+        ],
+      }
+    ]
+  }
+  
