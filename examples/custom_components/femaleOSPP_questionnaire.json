@@ -69,7 +69,6 @@
           "Disagree",
           "Strongly Disagree"
         ],
-        "correct_answer": 1
       },
       {
         "question": "I wear a blanket around the house.",
@@ -94,10 +93,11 @@
       {
         "question": "I think horoscopes are fun.",
         "options": [
-          "They stimulate the production of white blood cells.",
-          "They promote angiogenesis in tumor cells.",
-          "They block a protein that prevents T cells from attacking cancer cells.",
-          "They decrease the metabolic rate of cancer cells."
+           "Strongly Agree",
+          "Agree",
+          "Neither agree or disagree",
+          "Disagree",
+          "Strongly Disagree"
         ],
       }
     ]
