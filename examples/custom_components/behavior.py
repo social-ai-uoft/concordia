@@ -426,3 +426,26 @@ class BehavioralSuccess(component.Component):
       self._last_chain = prompt
       if self._verbose:
         print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
+
+        # Step 1: First get 10 potential behaviours (done)
+        # - List 5 potential likely positive and likely negative consequences of the behaviour
+        #   - How likely is that consequence, given you successfully try it?
+        #   - How good or bad is that consequence, given that it occurs?
+        #   - Get the sum of of the product of belief * evaluation
+        #   - Something something there are some things where you immediately have the positive or
+        #     negative consequences of the action as a single thing, as opposed to having it happen twice
+        # Step 2: Subjective norms
+        # - Get the relevant potential people who could be impacted for the behaviour
+        #   - There might be individuals who might believe that you should or should not perform the behaviour
+        #   - Who might approve or disapprove of the behaviour?
+        #   - Different consequences: different referents?
+        #   - What is {person}'s opinion on you doing {behaviour} from 1 to 10
+        #   - How important is this person's approval to you?
+        #   - Sum of the product of opinion * importance
+        # Step 3: Attitude + sujective norms = intention
+        # Step 4: Perceived control
+        # - For each behaviour, please list any factors that would make it easy or difficult for you to do this behaviour RIGHT NOW?
+        # - Feed this into, AFTER potential behaviour but BEFORE likelihood of consequences.
+        #
+        # When it softmaxes on outcome, generate a specific set of plan to engage in this behaviour (as a possibility)
