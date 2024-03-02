@@ -70,7 +70,6 @@ class LogitsQueryMetric(component.Component):
             if query[i] not in self._vocab:
                 raise ValueError(f"Query word {query[i]} not in vocabulary")
             self._query[query[i]] = {"token": self._vocab[query[i]], "index": i}
-            
     def name(
         self,
     ) -> str:
