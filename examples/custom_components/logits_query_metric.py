@@ -10,6 +10,7 @@ from concordia.typing import component
 from concordia.utils import measurements as measurements_lib
 
 import torch
+import math
 
 # DEFAULT_SCALE = ('abhorrent', 'wrong', 'neutral', 'right', 'praiseworthy')
 DEFAULT_CHANNEL_NAME = "multiple_choice_quiz"
@@ -58,16 +59,18 @@ class LogitsQueryMetric(component.Component):
             self._exam = json.load(f)
     
         assert query is not None, "Query must be provided"
-        self._query = {}
-        for i in range(len(query)):
-            # NOTE: some models will include a beginning of sentence token, some will not
-            # Choose which of the below lines to use based on the model
-
-            # self._query.append(query[i], self._model._tokenizer.encode(query[i]), 0)
-            self._query[query[i]] = {"token": self._model._tokenizer.encode(query[i])[1], "index": i}
+        
+        self._vocab = {}
+        for i in range(self._model._client.n_vocab()):
+            self._vocab[self._model._client._model.token_get_text(i)] = i
 
         # NOTE: self._query is a dictionary of {"word": {"token": token, "index": index in question json}}
-    
+        self._query = {}
+        for i in range(len(query)):
+            if query[i] not in self._vocab:
+                raise ValueError(f"Query word {query[i]} not in vocabulary")
+            self._query[query[i]] = {"token": self._vocab[query[i]], "index": i}
+            
     def name(
         self,
     ) -> str:
@@ -86,21 +89,22 @@ class LogitsQueryMetric(component.Component):
                 prompt=f"{observation}\n{question['question']}",
             )
 
-            # Agent answer is a tuple of (batch_size, vocab_size) tensors for each output token.
+            # Agent answer is a list of tuples of (token, log_prob) for the FIRST token of the response
             # Assume the answer will be the first token
-            # NOTE: If the answer is not at the first token, the probs for all query words might be similar
-
-            # Get the probabilities of every query word in the agent's answer
-            next_token_probs = torch.softmax(agent_answer[0], -1).squeeze(0)
-
             probs = {}
             for word in self._query:
-                probs[word] = next_token_probs[self._query[word]["token"]].item()
-           
-            # Normalize the probabilities
-            total = sum(probs.values())
-            for word in probs:
-                probs[word] = round(probs[word] / total, 4)
+                probs[word] = agent_answer[self._query[word]["token"]][1]
+                print(f"Logit for {word} is {probs[word]}")
+
+            # Softmax the probabilities
+            def softmax(dict):
+                exp_values = {key: math.exp(value) for key, value in dict.items()}
+                sum_exp_values = sum(exp_values.values())
+                softmax_probabilities = {key: value / sum_exp_values for key, value in exp_values.items()}
+                return softmax_probabilities
+            
+            probs = softmax(probs)
+                
             
             # Select the word with the highest probability as the answer
             answer = max(probs, key=probs.get)
