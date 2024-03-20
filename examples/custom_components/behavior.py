@@ -16,9 +16,11 @@
 import datetime
 import re
 import concurrent
+import json
 from typing import Callable, Sequence
 
 from concordia.associative_memory import associative_memory
+from concordia.associative_memory import formative_memories
 from concordia.document import interactive_document
 from concordia.language_model import language_model
 from concordia.typing import component
@@ -33,7 +35,7 @@ class BehavioralChoices(component.Component):
       name: str,
       model: language_model.LanguageModel,
       memory: associative_memory.AssociativeMemory,
-      agent_name: str,
+      player_config: formative_memories.AgentConfig,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -54,7 +56,9 @@ class BehavioralChoices(component.Component):
     self._model = model
     self._memory = memory
     self._state = ''
-    self._agent_name = agent_name
+    self._agent_name = player_config.name
+    self._goal = player_config.goal
+    self._traits = player_config.traits
     self._clock_now = clock_now
     self._num_memories_to_retrieve = num_memories_to_retrieve
     self._name = name
@@ -79,11 +83,14 @@ class BehavioralChoices(component.Component):
     if self._clock_now is not None:
       prompt.statement(f'Current time: {self._clock_now()}.\n')
 
+    prompt.statement(f'Traits of {self._agent_name}: {self._traits}')
+    prompt.statement(f'Goals of {self._agent_name}: {self._goal}')
+
     # Compare more or less likely to ONLY the most likely.
     question = (
         f'Given the memories above, list 10 behaviours that {self._agent_name} '
         f'could take in this situation. Include a variety of behaviours, '
-        f'including more and less likely behaviours.'
+        f'including more and less likely behaviours. '
     )
 
     self._state = prompt.open_question(
@@ -94,15 +101,167 @@ class BehavioralChoices(component.Component):
         terminators=None
     )
 
+    self._list = self._model.sample_text(
+      f"Reformat this list of behaviours into an array of JSON objects, "
+      f"with each object containing an entry called 'behaviour' that "
+      f"includes the behaviour and its description.\n"
+      f'{self._state}'
+    )
+
+    replacements = [
+      ('^\n*?.*?\n*?\[', '['),
+      (r'\n', '')
+    ]
+    
+    for old, new in replacements:
+      self._list = re.sub(old, new, self._list)
+
     self._last_chain = prompt
 
-    # Strip leading whitespace, numbers, and remove any "Based on...", and restrict the list to a maximum size of 10 items.
-    self._list = [
-      re.sub(r'^\s*?\d+\.\s', '', behav) for behav in re.sub(r'\n+', '\n', self._state).split(sep='\n') if not re.match(r'^\s*?Based\son', behav)
-    ][:10]
+    # # Strip leading whitespace, numbers, and remove any "Based on...", and restrict the list to a maximum size of 10 items.
+    # self._list = [
+    #   re.sub(r'^\s*?\d+\.\s', '', behav) for behav in re.sub(r'\n+', '\n', self._state).split(sep='\n') if not re.match(r'^\s*?Based\son', behav)
+    # ][:10]
 
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
+class BehavioralConsequences(component.Component):
+  """This component generates the potential consequences of a behavior."""
+
+  def __init__(
+      self,
+      name: str,
+      model: language_model.LanguageModel,
+      memory: associative_memory.AssociativeMemory,
+      player_config: formative_memories.AgentConfig,
+      components: Sequence[component.Component],
+      clock_now: Callable[[], datetime.datetime] | None = None,
+      num_memories_to_retrieve: int = 100,
+      verbose: bool = False,
+  ):
+    """Initializes the BehavioralConsequences component.
+
+    Args:
+      name: Name of the component.
+      model: Language model.
+      memory: Associative memory.
+      player_config: Name of the agent.
+      components: A sequence of input components.
+      clock_now: time callback to use for the state.
+      num_memories_to_retrieve: Number of memories to retrieve.
+      verbose: Whether to print the state.
+    """
+
+    self._verbose = verbose
+    self._model = model
+    self._memory = memory
+    self._state = ''
+    self._agent_name = player_config.name
+    self._goal = player_config.goal
+    self._traits = player_config.traits
+    self._clock_now = clock_now
+    self._num_memories_to_retrieve = num_memories_to_retrieve
+    self._components = components
+    self._name = name
+
+  def name(self) -> str:
+    return self._name
+
+  def state(self) -> str:
+    return self._state
+  
+  def update(self) -> None:
+    mems = '\n'.join(
+      self._memory.retrieve_recent(
+        self._num_memories_to_retrieve, add_time=True
+      )
+    )
+
+    for component in self._components:
+      self._list = json.loads(component._list)
+
+    self._output = []
+    for item in self._list:
+      prompt = interactive_document.InteractiveDocument(self._model)
+      prompt.statement(f'Memories of {self._agent_name}:\n{mems}')
+
+      if self._clock_now is not None:
+        prompt.statement(f'Current time: {self._clock_now()}.\n')
+
+      prompt.statement(
+          f'Instructions: \n'
+          f'Given the memories above, evaluate the potential consequences '
+          f'of {self._agent_name} engaging in the following behaviours. '
+          f'Give five potential consequences, and include a variety of '
+          f'positive or negative potential consequences.\n'
+          f'Behaviours: \n'
+      )
+      question = (
+        ' - '.join([value for value in item.values() if value])
+      )
+      self._state = prompt.open_question(
+        question,
+        max_characters=1000,
+        max_tokens=1000,
+        terminators=None
+      )
+      self._output.append(self._state)
+    
+    self._consequences = []
+    for item in self._output:
+      _item = self._model.sample_text(
+        f"Convert the following list of consequences into an array of JSON objects with "
+        f"each object containing an entry termed 'consequence' including the consequence and "
+        f"an entry termed 'description' including the description of the consequence:\n"
+        f"{item}",
+        terminators=None
+      )
+
+      replacements = [
+        ('^\n*?.*?\n*?\[', '['),
+        (r'\n', '')
+      ]
+      
+      for old, new in replacements:
+        _item = re.sub(old, new, _item)
+      
+      self._consequences.append(_item)
+      
+
+    # question = (
+    #   f'Instructions: \n'
+    #   f'Given the memories above, evaluate the potential consequences '
+    #   f'of {self._agent_name} engaging in the following behaviours. '
+    #   f'Give five potential consequences, and include a variety of '
+    #   f'positive or negative potential consequences.\n'
+    #   f"Behaviours: \n"
+    #   f"\n".join(
+    #     [f"{str(x[0])}. {' - '.join(x[1].values())}" for x in zip([i for i in range(len(self._list))], self._list)]
+    #   )
+    # )
+
+    # self._state = prompt.open_question(
+    #   question,
+    #   max_characters=3000,
+    #   max_tokens=1000,
+    #   terminators=None
+    # )
+
+    # self._list = self._model.sample_text(
+    #   f"Reformat this list of behaviours and consequences into an array of JSON objects, "
+    #   f"with each object containing an entry called 'behaviour' that includes the "
+    #   f"the behaviour and its description, and an entry called 'consequences' that "
+    #   f"includes an array of the potential consequences."
+    #   f'{self._state}'
+    # )
+
+
+    self._last_chain = prompt
+    if self._verbose:
+      print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
+
 
 class BehavioralEvaluation(component.Component):
   """This component generates an evaluation of a behavior."""
