@@ -93,7 +93,7 @@ class LogitsQueryMetric(component.Component):
             probs = {}
             for word in self._query:
                 probs[word] = agent_answer[self._query[word]["token"]][1]
-                print(f"Logit for {word} is {probs[word]}")
+                # print(f"Logit for {word} is {probs[word]}")
 
             # Softmax the probabilities
             def softmax(dict):

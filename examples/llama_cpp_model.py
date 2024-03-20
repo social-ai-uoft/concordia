@@ -111,24 +111,24 @@ class LlamaCppLanguageModel(language_model.LanguageModel):
                         {"role": "user", "content": message}
                     ]
                 )
+                # outputs = self._client(message)
                 
                 if self._logits:
                     if self._verbose:
                         print("The LLM response is: ")
                         print(outputs["choices"][0]["message"]["content"])
+                        # print(outputs["choices"][0]["text"])
+                    
                     # last possible index is 70
                     response = [(self._client._model.token_get_text(i), llama_cpp.llama_get_logits_ith(self._client.ctx, 1)[i]) for i in range(self._client.n_vocab())]
                     
                     # Sort response by logit value
                     response.sort(key=lambda x: x[1], reverse=True)
 
-                    for i in range(5):
-                        print(f"{response[i][0]}: {response[i][1]}")
-
+                    # for i in range(5):
+                    #     print(f"{response[i][0]}: {response[i][1]}")
                     # print("The response is: ")
-                    # print(response)
-                    
-                    # response = [(self._client._model.token_get_text(i), llama_cpp.llama_get_logits(self._client.ctx)[i]) for i in range(self._client.n_vocab())]    
+                    # print(response)   
                 else:
                     response = outputs
 
