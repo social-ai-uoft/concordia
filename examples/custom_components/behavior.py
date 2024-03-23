@@ -195,6 +195,11 @@ class BehavioralConsequences(component.Component):
           f'of {self._agent_name} engaging in the following behaviours. '
           f'Give five potential consequences, and include a variety of '
           f'positive or negative potential consequences.\n'
+          f'Also include a rating of how good or bad {self._agent_name} '
+          f'would consider this consequence, on a rating from 1-10, with '
+          f'1 indicating that {self._agent_name} would very much dislike the consequence, '
+          f'and 10 indicating that {self._agent_name} would very much like the consequence.'
+          f'Finally, include a number indicating the probability of this consequence occurring.'
           f'Behaviours: \n'
       )
       question = (
@@ -212,9 +217,19 @@ class BehavioralConsequences(component.Component):
     for item in self._output:
       _item = self._model.sample_text(
         f"Convert the following list of consequences into an array of JSON objects with "
-        f"each object containing an entry termed 'consequence' including the consequence and "
-        f"an entry termed 'description' including the description of the consequence:\n"
-        f"{item}",
+        f"each object containing an entry termed 'consequence' including the consequence, "
+        f"an entry termed 'description' including the description of the consequence, "
+        f"an entry termed 'rating' including the rating of the consequence's outcome, "
+        f" and an entry termed 'probability' including the probability of that consequence occurring:\n"
+        f"{item}\n"
+        f"\n"
+        f"Use the following format for each entry: \n"
+        "{\n"
+        "\t'consequence': The name of the consequence,\n"
+        "\t'description': A description of the consequence,\n"
+        "\t'rating': A number from 1-10 indicating the desirability of the consequence,\n"
+        "\t'probability': The probability of the consequence occurring\n"
+        "}",
         terminators=None
       )
 
@@ -260,8 +275,6 @@ class BehavioralConsequences(component.Component):
     self._last_chain = prompt
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
-
-
 
 class BehavioralEvaluation(component.Component):
   """This component generates an evaluation of a behavior."""
