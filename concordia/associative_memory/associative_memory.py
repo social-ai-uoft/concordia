@@ -208,7 +208,7 @@ class AssociativeMemory:
         ) + next_time.dt.strftime('- %H:%M:%S]: ')
         output = interval + data['text']
       else:
-        output = data['time'].dt.strftime('[%d %b %Y %H:%M:%S] ') + data['text']
+        output = pd.to_datetime(data['time']).dt.strftime('[%d %b %Y %H:%M:%S] ') + data['text']
     else:
       output = data['text']
 
