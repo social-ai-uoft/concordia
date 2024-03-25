@@ -126,14 +126,27 @@ class BehavioralChoices(component.Component):
               ).group(1).strip()
             )
             
-            each_consequence["value"] = int(re.search(
-              r'(?<=Value: )(-?\d+)(?=,)',
-              consequence
-            ).group(1))
-            each_consequence["likelihood"] = float(re.search(
-              r'(?<=Likelihood: )(\d+)(%?)(?=\))',
-              consequence
-            ).group(1).strip("%"))/100
+            if consequence.__contains__("Value:"):
+            
+              each_consequence["value"] = int(re.search(
+                r'(?<=Value: )(-?\d+)(?=,)',
+                consequence
+              ).group(1))
+              each_consequence["likelihood"] = float(re.search(
+                r'(?<=Likelihood: )(\d+)(%?)(?=\))',
+                consequence
+              ).group(1).strip("%"))/100
+            
+            else:
+              each_consequence["value"] = int(re.search(
+                r'(-?\+?\d+)(?=\))',
+                consequence
+              ).group(1))
+              each_consequence["likelihood"] = float(re.search(
+                r'(?<=\()(\d+)(%?)(?=,)',
+                consequence
+              ).group(1).strip("%"))/100
+
             # print(each_consequence)
 
             each_behav["consequences"].append(each_consequence)
