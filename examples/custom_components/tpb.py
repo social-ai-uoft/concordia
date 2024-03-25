@@ -114,7 +114,7 @@ class BehavioralChoices(component.Component):
           each_consequence = {}
 
 
-          if consequence.__contains__("("):
+          if consequence.__contains__("(") and consequence.__contains__(")"):
             print(f"- {consequence} -")
 
             each_consequence["description"] = re.sub(
@@ -160,7 +160,7 @@ class BehavioralChoices(component.Component):
 
     question = (
         f"Instructions: \n"
-        f"Consider each of the potential behaviours above that {self._agent_name} can take in response to the situation. "
+        f"Given the memories above, generate a list of five potential behaviours above that {self._agent_name} can take in response to the situation. "
         # f"Generate a list of five potential behaviours that {self._agent_name} can take in response to the situation. "
         f"For each potential behaviour, provide three possible positive and three possible negative consequences of that behaviour. "
         f"For each potential consequence, indicate with a number from -10 to 10 how bad to good "
