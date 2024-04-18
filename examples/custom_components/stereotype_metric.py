@@ -2,16 +2,22 @@
 
 from collections.abc import Sequence
 import json
+import datetime
 
 from concordia.document import interactive_document
 from concordia.language_model import language_model
-from concordia.typing import clock as game_clock
+from concordia.clocks import game_clock
 from concordia.typing import component
 from concordia.utils import measurements as measurements_lib
 
 
 # DEFAULT_SCALE = ('abhorrent', 'wrong', 'neutral', 'right', 'praiseworthy')
 DEFAULT_CHANNEL_NAME = "multiple_choice_quiz"
+#@title Make the clock
+time_step = datetime.timedelta(minutes=20)
+SETUP_TIME = datetime.datetime(hour=20, year=2024, month=10, day=1)
+
+START_TIME = datetime.datetime(hour=18, year=2024, month=10, day=2)
 
 
 class QuizMetric(component.Component):
@@ -41,7 +47,9 @@ class QuizMetric(component.Component):
         """
         self._model = model
         self._name = name
-        self._clock = agent._clock
+        self._clock = game_clock.MultiIntervalClock(
+            start=SETUP_TIME,
+            step_sizes=[time_step, datetime.timedelta(seconds=10)])
         self._verbose = verbose
         self._player_name = agent.name
         self._player_id = agent.agent_id
