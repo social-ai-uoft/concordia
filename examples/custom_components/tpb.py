@@ -196,7 +196,7 @@ class BehavioralChoices(component.Component):
       question,
       max_characters=5000,
       max_tokens=3000,
-      terminators=None
+      # terminators=None
     )
 
     self._last_chain = prompt
@@ -291,7 +291,7 @@ class SubjectiveNorms(component.Component):
       question,
       max_characters=5000,
       max_tokens=3000,
-      terminators=None
+      # terminators=None
     )
 
     self._last_chain = prompt
@@ -444,7 +444,7 @@ class PersonMotivations(component.Component):
       question,
       max_characters=5000,
       max_tokens=3000,
-      terminators=None
+      # terminators=None
     )
 
     self._last_chain = prompt

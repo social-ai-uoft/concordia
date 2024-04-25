@@ -19,9 +19,13 @@ import re
 
 from concordia.language_model import language_model
 from concordia.utils import measurements as measurements_lib
-from langchain import llms
+from langchain.llms.ollama import Ollama
+from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from typing_extensions import override
 
+MAX_MULTIPLE_CHOICE_ATTEMPTS = 5
+MAX_SAMPLE_TEXT_ATTEMPTS = 5
 
 def _extract_choices(text):
   match = re.search(r"\(?(\w)\)", text)
@@ -40,6 +44,8 @@ class OllamaLanguageModel(language_model.LanguageModel):
       system_message: str = "",
       measurements: measurements_lib.Measurements | None = None,
       channel: str = language_model.DEFAULT_STATS_CHANNEL,
+      streaming: bool = False,
+      **kwargs
   ) -> None:
     """Initializes the instance.
 
@@ -55,7 +61,17 @@ class OllamaLanguageModel(language_model.LanguageModel):
     self._system_message = system_message
     self._measurements = measurements
     self._channel = channel
-    self._client = llms.Ollama(model=model_name)
+    self._terminators = kwargs['terminators'] if 'terminators' in kwargs else []
+    if "llama3" in self._model_name and len(self._terminators) == 0:
+      self._terminators.extend(['<|eot_id|>'])
+    if streaming:
+      self._client = Ollama(
+        model=model_name,
+        stop = self._terminators,
+        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
+      )
+    else:
+      self._client = Ollama(model=model_name, stop=self._terminators)
 
   @override
   def sample_text(
@@ -70,6 +86,8 @@ class OllamaLanguageModel(language_model.LanguageModel):
       seed: int | None = None,
   ) -> str:
     prompt_with_system_message = f"{self._system_message}\n\n{prompt}"
+
+    terminators = self._terminators.extend(terminators) if terminators is not None else self._terminators
 
     response = self._client(
         prompt_with_system_message,
