@@ -20,8 +20,10 @@ import json
 import termcolor
 
 from typing import Callable, Sequence
+from collections import defaultdict
 from retry import retry
 from scipy.stats import zscore
+from scipy.special import softmax
 
 from concordia.associative_memory import associative_memory
 from concordia.associative_memory import formative_memories
@@ -32,7 +34,59 @@ from concordia.typing import component
 
 MAX_JSONIFY_ATTEMPTS = 5
 
-class Behaviour(component.Component):
+class TPBComponent(component.Component):
+  """Abstract class for a Theory of Planned Behaviour component."""
+
+  def __init__(
+      self,
+      name: str,
+      model: language_model.LanguageModel,
+      memory: associative_memory.AssociativeMemory,
+      player_config: formative_memories.AgentConfig,
+      clock_now: Callable[[], datetime.datetime] | None = None,
+      num_memories_to_retrieve: int = 100,
+      verbose: bool = False,
+  ):
+    
+    """Initializes the abstract TPB component.
+
+    Args:
+      name: Name of the component.
+      model: Language model.
+      memory: Associative memory.
+      player_config: An AgentConfig object containing details about the agent.
+      num_behavs: The number of behaviours to generate.
+      clock_now: time callback to use for the state.
+      num_memories_to_retrieve: Number of memories to retrieve.
+      verbose: Whether to print the state.
+    """
+
+    self._verbose = verbose
+    self._model = model
+    self._memory = memory
+    self._state = ''
+    self._agent_name = player_config.name
+    self._goal = player_config.goal
+    self._traits = player_config.traits
+    self._clock_now = clock_now
+    self._num_memories_to_retrieve = num_memories_to_retrieve
+    self._name = name
+    self._json = []
+    
+  def name(self) -> str:
+    return self._name
+
+  def state(self) -> str:
+    return self._state
+  
+  def json(self) -> list[dict]:
+    return self._json
+  
+  def jsonify(self) -> list[dict]:
+    """Take the output of the LLM and reformat it into a JSON array."""
+    pass
+
+class Behaviour(TPBComponent):
   """This component generates a list of candidate behaviours for an agent to take."""
 
   def __init__(
@@ -59,33 +113,18 @@ class Behaviour(component.Component):
       verbose: Whether to print the state.
     """
 
-    self._verbose = verbose
-    self._model = model
-    self._memory = memory
-    self._state = ''
-    self._agent_name = player_config.name
-    self._goal = player_config.goal
-    self._traits = player_config.traits
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+                     num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    
     self._num_behavs = num_behavs
-    self._clock_now = clock_now
-    self._num_memories_to_retrieve = num_memories_to_retrieve
-    self._name = name
-    self._list = []
 
-  def name(self) -> str:
-    return self._name
-
-  def state(self) -> str:
-    return self._state
-  
-  def json(self) -> list:
-    return self._json
 
   def jsonify(self) -> list:
-    """Take the output of the LLM and reformat it into a JSON array."""
+
     behaviour_list = []
     # Split on each digit
-    lines = re.split(r'\d\.?:?\s?', self._state)
+    lines = re.split(r'\d[\.:]\s?', self._state)
     # Make sure this has returned a numbered list, or throw an assertion error
     assert len(lines) > 1, "LLM did not generate a numbered list of behaviours."
     # Add the behaviour to the line.
@@ -132,7 +171,7 @@ class Behaviour(component.Component):
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
 
-class Attitude(component.Component):
+class Attitude(TPBComponent):
   """This component generates a personal attitude towards a given behaviour."""
 
   def __init__(
@@ -158,24 +197,11 @@ class Attitude(component.Component):
       verbose: Whether to print the state.
     """
 
-    self._verbose = verbose
-    self._model = model
-    self._memory = memory
-    self._state = ''
-    self._agent_name = player_config.name
-    self._goal = player_config.goal
-    self._traits = player_config.traits
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+                     num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    
     self._components = components
-    self._clock_now = clock_now
-    self._num_memories_to_retrieve = num_memories_to_retrieve
-    self._name = name
-    self._list = []
-
-  def name(self) -> str:
-    return self._name
-
-  def state(self) -> str:
-    return self._state
 
   def eval_attitude(self, consequences: list[dict]) -> int:
     """Generate a global attitude for a behaviour given a list of consequences.
@@ -185,13 +211,9 @@ class Attitude(component.Component):
     vs = [x["value"] for x in consequences]
     ls = [x["likelihood"] for x in consequences]
     return(sum([v * l for v, l in zip(vs, ls)]))
-  
-  def json(self) -> list:
-    return self._json
 
   def jsonify(self) -> list:
-    """Take the output of the LLM and reformat it into a JSON array."""
-    
+
     # Split on behaviours
     consequence_lists = re.split(
       r"\n\nBEHAVIOUR\n\n",
@@ -305,7 +327,7 @@ class Attitude(component.Component):
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
 
-class People(component.Component):
+class People(TPBComponent):
   """This component generates a list of people who may have opinions about a behaviour."""
 
   def __init__(
@@ -334,31 +356,14 @@ class People(component.Component):
       verbose: Whether to print the state.
     """
 
-    self._verbose = verbose
-    self._model = model
-    self._memory = memory
-    self._state = ''
-    self._agent_name = player_config.name
-    self._goal = player_config.goal
-    self._traits = player_config.traits
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+                     num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    
     self._num_people = num_people
     self._components = components
-    self._clock_now = clock_now
-    self._num_memories_to_retrieve = num_memories_to_retrieve
-    self._name = name
-    self._list = []
-
-  def name(self) -> str:
-    return self._name
-
-  def state(self) -> str:
-    return self._state
-  
-  def json(self) -> list:
-    return self._json
 
   def jsonify(self) -> list:
-    """Take the output of the LLM and reformat it into a JSON array."""
     
     # Split on behaviours
     people_lists = re.split(
@@ -380,7 +385,7 @@ class People(component.Component):
       for line in lines:
         person = {}
         person["person"] = re.search(
-            r'(.*?)(?=:|\()',
+            r'(.*?)(?=:|\(|\s-)',
             line
         ).group(1).replace("*", "").strip()
         person["approval"] = int(re.search(
@@ -453,7 +458,7 @@ class People(component.Component):
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
 
-class Motivation(component.Component):
+class Motivation(TPBComponent):
   """This gets the motivation of a character to take others' into account."""
   
   def __init__(
@@ -463,7 +468,6 @@ class Motivation(component.Component):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
-      num_people: int = 5,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -481,31 +485,13 @@ class Motivation(component.Component):
       verbose: Whether to print the state.
     """
 
-    self._verbose = verbose
-    self._model = model
-    self._memory = memory
-    self._state = ''
-    self._agent_name = player_config.name
-    self._goal = player_config.goal
-    self._traits = player_config.traits
-    self._num_people = num_people
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+                     num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    
     self._components = components
-    self._clock_now = clock_now
-    self._num_memories_to_retrieve = num_memories_to_retrieve
-    self._name = name
-    self._list = []
-
-  def name(self) -> str:
-    return self._name
-
-  def state(self) -> str:
-    return self._state
-  
-  def json(self) -> list:
-    return self._json
 
   def jsonify(self) -> list:
-    """Take the output of the LLM and reformat it into a JSON array."""
 
     motiv_list = self._state.split("\n\nPEOPLE\n\n")
     motivs = {}
@@ -561,6 +547,7 @@ class Motivation(component.Component):
           f"of a behaviour when {self._agent_name} is considering how to act in a given situation."
           f"Provide a value from 0 to 100, with 0 being not at all, and 100 being the most infuential, "
           f"in the format (Motivation: number). Remember to consider the full scale from 0 to 100 in the ratings. "
+          f"Do not provide any explanation or description."
       ) 
 
       return prompt, prompt.open_question(
@@ -589,7 +576,7 @@ class Motivation(component.Component):
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
 
-class SubjectiveNorm(component.Component):
+class SubjectiveNorm(TPBComponent):
   """This computes the subjective norms applied to a behaviour."""
 
   def __init__(
@@ -616,31 +603,11 @@ class SubjectiveNorm(component.Component):
       verbose: Whether to print the state.
     """
 
-    self._verbose = verbose
-    self._model = model
-    self._memory = memory
-    self._state = ''
-    self._agent_name = player_config.name
-    self._goal = player_config.goal
-    self._traits = player_config.traits
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+                     num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    
     self._components = components
-    self._clock_now = clock_now
-    self._num_memories_to_retrieve = num_memories_to_retrieve
-    self._name = name
-    self._list = []
-
-  def name(self) -> str:
-    return self._name
-
-  def state(self) -> str:
-    return self._state
-  
-  def json(self) -> list:
-    return self._json
-
-  def jsonify(self) -> list:
-    """Take the output of the LLM and reformat it into a JSON array."""
-    pass
 
   def eval_norm(self, people: list[dict]) -> int:
     """Generate a global subjective norm for a behaviour given a list of people.
@@ -661,4 +628,55 @@ class SubjectiveNorm(component.Component):
       output[i]['norm'] = self.eval_norm(output[i]['people'])
 
     self._json = output
-      
+
+class TPB(TPBComponent):
+  """Full TPB model."""
+  def __init__(
+      self,
+      name: str,
+      model: language_model.LanguageModel,
+      memory: associative_memory.AssociativeMemory,
+      player_config: formative_memories.AgentConfig,
+      components: Sequence[TPBComponent],
+      clock_now: Callable[[], datetime.datetime] | None = None,
+      num_memories_to_retrieve: int = 100,
+      verbose: bool = False,
+  ):
+    """Initializes the TPB component.
+
+    Args:
+      name: Name of the component.
+      model: Language model.
+      memory: Associative memory.
+      player_config: An AgentConfig object containing details about the agent.
+      components: A sequence including a Behaviour component.
+      clock_now: time callback to use for the state.
+      num_memories_to_retrieve: Number of memories to retrieve.
+      verbose: Whether to print the state.
+    """
+
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+                     num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+
+    self._components = components
+
+  def jsonify(self) -> list:
+    """Take the output of the LLM and reformat it into a JSON array."""
+    pass
+
+  def update(self) -> None:
+
+    self._jsons: list[list[dict]] = []
+    self._json: list[dict] = []
+
+    for component in self._components:
+      if component.name == ["attitude", "norm"]:
+        self._jsons.append(component.json())
+
+    for _json in self._jsons:
+      temp = defaultdict(set)
+      for i in range(len(_json)):
+        for k, v in _json[i].items():
+          temp[k].add(v)
+      self._json.append(temp)
