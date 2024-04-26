@@ -84,7 +84,7 @@ class CallTrackingComponent(component.Component):
     return False
 
 
-class GameMaterTest(parameterized.TestCase):
+class GameMasterTest(parameterized.TestCase):
 
   def test_calls_sequence(self):
     gm_call_tracker = CallTrackingComponent()
@@ -161,6 +161,7 @@ class GameMaterTest(parameterized.TestCase):
         'observe',
         'state',
         'state',
+        'update_after_event',
     ]
     self.assertEqual(alice_call_tracker.calls_sequence, alice_expected_calls)
 
@@ -169,6 +170,7 @@ class GameMaterTest(parameterized.TestCase):
         'observe',
         'state',
         'state',
+        'update_after_event',
     ]
     self.assertEqual(bob_call_tracker.calls_sequence, bob_expected_calls)
 

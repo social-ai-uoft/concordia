@@ -56,6 +56,8 @@ class SelfPerception(component.Component):
     self._clock_now = clock_now
     self._num_memories_to_retrieve = num_memories_to_retrieve
     self._name = name
+    self._last_update = self._clock_now() - datetime.timedelta(days=365)
+    self._history = []
 
   def name(self) -> str:
     return self._name
@@ -63,7 +65,15 @@ class SelfPerception(component.Component):
   def state(self) -> str:
     return self._state
 
+  def get_last_log(self):
+    if self._history:
+      return self._history[-1].copy()
+
   def update(self) -> None:
+    if self._clock_now() == self._last_update:
+      return
+    self._last_update = self._clock_now()
+
     mems = '\n'.join(
         self._memory.retrieve_recent(
             self._num_memories_to_retrieve, add_time=True
@@ -79,7 +89,7 @@ class SelfPerception(component.Component):
     question = (
         f'Given the memories above, what kind of person is {self._agent_name}?'
     )
-
+    old_state = self._state
     self._state = prompt.open_question(
         question,
         answer_prefix=f'{self._agent_name} is ',
@@ -89,6 +99,17 @@ class SelfPerception(component.Component):
 
     self._state = f'{self._agent_name} is {self._state}'
 
+    if old_state != self._state:
+      self._memory.add(f'[self reflection] {self._state}')
+
     self._last_chain = prompt
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
+    update_log = {
+        'date': self._clock_now(),
+        'Summary': question,
+        'State': self._state,
+        'Chain of thought': prompt.view().text().splitlines(),
+    }
+    self._history.append(update_log)

@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """A Generic Game Master."""
 
 from collections.abc import Callable, Sequence
 import concurrent.futures
 import random
 
+from concordia import components as generic_components
 from concordia.agents import basic_agent
 from concordia.associative_memory import associative_memory
 from concordia.document import interactive_document
@@ -28,13 +28,31 @@ from concordia.typing import agent as simulacrum_agent
 from concordia.typing import clock as game_clock
 from concordia.typing import component
 from concordia.typing import game_master as simulacrum_game_master
+from concordia.utils import helper_functions
 import termcolor
 
 
-DEFAULT_THOUGHTS = [
+DEFAULT_THOUGHTS = (
     thought_chains.attempt_to_result,
     thought_chains.result_to_who_what_where,
-]
+)
+
+
+DEFAULT_GAME_MASTER_INSTRUCTIONS = (
+    'This is a social science experiment. It is structured as a '
+    'tabletop roleplaying game (like dungeons and dragons). You are the '
+    'game master. You will describe the current situation to the '
+    'participants in the experiment and then on the basis of what you '
+    'tell them they will suggest actions for the character they control. '
+    'Aside from you, each other participant controls just one character. '
+    'You are the game master so you may control any non-player '
+    'character. You will track the state of the world and keep it '
+    'consistent as time passes in the simulation and the participants '
+    'take actions and change things in their world. Remember that this '
+    'is a serious social science experiment. It is not just a game. It '
+    'need not be fun for the participants. Always use third-person '
+    'limited perspective, even when speaking directly to the participants.'
+)
 
 
 class GameMaster(simulacrum_game_master.GameMaster):
@@ -49,7 +67,9 @@ class GameMaster(simulacrum_game_master.GameMaster):
       name: str = 'Game Master',
       update_thought_chain: (
           Sequence[
-              Callable[[interactive_document.InteractiveDocument, str], str]
+              Callable[
+                  [interactive_document.InteractiveDocument, str, str], str
+              ]
           ]
           | None
       ) = None,
@@ -61,7 +81,8 @@ class GameMaster(simulacrum_game_master.GameMaster):
       verbose: bool = False,
       concurrent_externalities: bool = True,
       concurrent_action: bool = False,
-      log_colour: str = 'red',
+      use_default_instructions: bool = True,
+      log_color: str = 'red',
   ):
     """Game master constructor.
 
@@ -87,19 +108,28 @@ class GameMaster(simulacrum_game_master.GameMaster):
       concurrent_externalities: if true, runs externalities in separate threads
       concurrent_action: if true, runs player actions and events in separate
         threads
-      log_colour: colour in which to print logs
+      use_default_instructions: set to False if you want to skip the standard
+        instructions used for the game master, e.g. do this if you plan to pass
+        custom instructions as a constant component instead.
+      log_color: color in which to print logs
     """
     self._name = name
     self._model = model
     self._memory = memory
     self._clock = clock
-    self._players = players
-    self._log_colour = log_colour
+    self._log_color = log_color
     self._randomise_initiative = randomise_initiative
     self._player_observes_event = player_observes_event
     self._players_act_simultaneously = players_act_simultaneously
     self._action_spec = action_spec or simulacrum_agent.DEFAULT_ACTION_SPEC
     self._concurrent_action = concurrent_action
+
+    components = list(components or [])
+    if use_default_instructions:
+      instructions_component = generic_components.constant.ConstantComponent(
+          state=DEFAULT_GAME_MASTER_INSTRUCTIONS, name='Instructions'
+      )
+      components.insert(0, instructions_component)
 
     self._components = {}
     for comp in components:
@@ -112,7 +142,9 @@ class GameMaster(simulacrum_game_master.GameMaster):
 
     self._update_from_player_thoughts = update_thought_chain or DEFAULT_THOUGHTS
 
-    self._players_by_name = {player.name: player for player in self._players}
+    self._players_by_name = {player.name: player for player in players}
+    if len(self._players_by_name) != len(players):
+      raise ValueError('Duplicate player names')
 
     self._concurrent_externalities = concurrent_externalities
     self._log = []
@@ -128,15 +160,15 @@ class GameMaster(simulacrum_game_master.GameMaster):
   def get_data_frame(self):
     return self._memory.get_data_frame()
 
-  def _print(self, entry, colour=None):
-    print(termcolor.colored(entry, colour or self._log_colour))
+  def _print(self, entry, color=None):
+    print(termcolor.colored(entry, color or self._log_color))
 
   def reset(self):
     self._last_chain = None
-    self._num_players = len(self._players)
+    self._num_players = len(self._players_by_name.keys())
 
   def get_player_names(self):
-    return [player.name for player in self._players]
+    return list(self._players_by_name.keys())
 
   def update_from_player(self, player_name: str, action_attempt: str):
     prompt = interactive_document.InteractiveDocument(self._model)
@@ -158,7 +190,10 @@ class GameMaster(simulacrum_game_master.GameMaster):
 
     # Produce the event that has happened as the result of the action attempt
     prompt, event_statement = thought_chains.run_chain_of_thought(
-        self._update_from_player_thoughts, action_attempt, prompt
+        self._update_from_player_thoughts,
+        action_attempt,
+        prompt,
+        player_name,
     )
 
     self._memory.add(event_statement)
@@ -187,9 +222,9 @@ class GameMaster(simulacrum_game_master.GameMaster):
         'Active player': {
             'Name': player_name,
             'Action attempt': action_attempt,
-            'Chain of thought': self._players_by_name[
-                player_name
-            ].get_last_log(),
+            'Context for action selection and components': (
+                self._players_by_name[player_name].get_last_log()
+            ),
         },
     }
 
@@ -233,35 +268,73 @@ class GameMaster(simulacrum_game_master.GameMaster):
 
   def update_components(self) -> None:
     # MULTI THREAD!
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-      executor.map(
-          lambda construct: construct.update(), list(self._components.values()))
+    def _get_recursive_update_func(
+        comp: component.Component,
+    ) -> Callable[[], None]:
+      return lambda: helper_functions.apply_recursively(
+          comp, function_name='update'
+      )
 
-  def _step_player(self, player: basic_agent.BasicAgent):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+      for comp in self._components.values():
+        executor.submit(_get_recursive_update_func(comp))
+
+  def _step_player(
+      self,
+      player: basic_agent.BasicAgent,
+      action_spec: simulacrum_agent.ActionSpec | None = None,
+  ):
     self.update_components()
     self.view_for_player(player_name=player.name)
-    action = player.act(self._action_spec)
+
+    if action_spec:
+      action_spec_this_time = action_spec
+    else:
+      action_spec_this_time = self._action_spec
+
+    action = player.act(action_spec_this_time)
 
     self.update_from_player(action_attempt=action, player_name=player.name)
 
-  def step(self):
+  def step(
+      self,
+      *,
+      active_players: Sequence[basic_agent.BasicAgent] | None = None,
+      action_spec: simulacrum_agent.ActionSpec | None = None,
+  ):
     """Steps the game.
 
     At each step players all take a turn 'quasisimultaneously' with regard to
     the main game clock, but still in a specific order within the timestep.
     This is the same principle as initiative order in dungeons and dragons.
+
+    Args:
+      active_players: Optionally specify players to take turns in this round.
+      action_spec: Optionally specify what kind of action to ask the agent to
+        generate.
     """
-    players = list(self._players)
+    if active_players:
+      players = list(active_players)
+    else:
+      players = list(self._players_by_name.values())
+
+    override_action_spec = None
+    if action_spec:
+      override_action_spec = action_spec
+
+    step_player_fn = lambda player: self._step_player(
+        player=player, action_spec=override_action_spec
+    )
 
     if self._randomise_initiative:
       random.shuffle(players)
 
     if self._concurrent_action:
       with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.map(self._step_player, players)
+        executor.map(step_player_fn, players)
     else:
       for player in players:
-        self._step_player(player)
+        step_player_fn(player)
         if not self._players_act_simultaneously:
           self._clock.advance()
     if self._players_act_simultaneously:

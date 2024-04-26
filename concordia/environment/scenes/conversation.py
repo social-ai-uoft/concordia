@@ -41,7 +41,7 @@ class ConversationTracker(component.Component):
       self,
       model: language_model.LanguageModel,
       players: Sequence[basic_agent.BasicAgent],
-      premis: str = '',
+      premise: str = '',
       verbose: bool = False,
       log_colour: str = 'red',
   ):
@@ -50,13 +50,13 @@ class ConversationTracker(component.Component):
     Args:
       model: a language model
       players: players participating
-      premis: any extra text to be added on top of the conversation (say,
+      premise: any extra text to be added on top of the conversation (say,
         circumstances of it)
       verbose: whether or not to print intermediate reasoning steps
       log_colour: colour for logging
     """
     self._model = model
-    self._state = premis
+    self._state = premise
     self._log_colour = log_colour
     self._players = players
 
@@ -103,6 +103,7 @@ def make_conversation_game_master(
     memory_factory: blank_memories.MemoryFactory,
     name: str = 'Conversation scene',
     premise: str = '',
+    review_participants: bool = True,
 ):
   """Creates a game master that runs a conversation between players.
 
@@ -114,6 +115,8 @@ def make_conversation_game_master(
     name: the name of the game master
     premise: any extra text to be added on top of the conversation (say,
       circumstances of it)
+    review_participants: whether or not to start each conversation scene by
+      declaring who its participants are.
 
   Returns:
     a game master
@@ -127,18 +130,24 @@ def make_conversation_game_master(
 
   agent_names = [player.name for player in players]
 
-  is_are = 'are' if len(agent_names) > 1 else 'is'
-  convo = f'{", ".join(agent_names)} {is_are} in conversation'
+  convo = ''
   if premise:
-    convo = (
-        f'{premise}\nAs a result {convo}.\nHere is the conversation from the'
-        ' beginning:'
-    )
+    convo = f'{premise} '
+  if review_participants:
+    if premise:
+      convo += '\nAs a result '
+    is_are = 'are' if len(agent_names) > 1 else 'is'
+    actors_str = f'{", ".join(agent_names)} {is_are} in conversation'
+    if len(agent_names) == 1:
+      actors_str += ' with themself'
+    convo += f'{actors_str}.\n'
+
+  convo += 'Here is the conversation from the beginning:'
 
   conversation_tracker = ConversationTracker(
       model=model,
       players=players,
-      premis=convo,
+      premise=convo,
       verbose=True,
       log_colour='red',
   )

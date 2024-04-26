@@ -21,7 +21,7 @@ Park, J.S., O'Brien, J.C., Cai, C.J., Morris, M.R., Liang, P. and
 Bernstein, M.S., 2023. Generative agents: Interactive simulacra of human
 behavior. arXiv preprint arXiv:2304.03442.
 """
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 import concurrent
 import contextlib
 import copy
@@ -169,12 +169,14 @@ class BasicAgent(
     return result
 
   def get_last_log(self):
-    return self._last_chain_of_thought
+    if not self._log:
+      return ''
+    return self._log[-1]
 
   def state(self):
     with self._state_lock:
       return '\n'.join(
-          f"{self._agent_name}'s " + (comp.name() + ':\n' + comp.state())
+          f"{self._agent_name}'s " + (comp.name() + ':\n' + comp.state() + '\n')
           for comp in self._components.values()
           if comp.state()
       )
@@ -186,9 +188,17 @@ class BasicAgent(
 
   def _update(self):
     self._last_update = self._clock.now()
+
+    def _get_recursive_update_func(
+        comp: component.Component,
+    ) -> Callable[[], None]:
+      return lambda: helper_functions.apply_recursively(
+          comp, function_name='update'
+      )
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
       for comp in self._components.values():
-        executor.submit(comp.update)
+        executor.submit(_get_recursive_update_func(comp))
 
   def observe(self, observation: str):
     if observation and not self._under_interrogation:
@@ -228,8 +238,8 @@ class BasicAgent(
         output = self._agent_name + ' '
         output += prompt.open_question(
             call_to_action,
-            max_characters=1200,
-            max_tokens=1200,
+            max_characters=2500,
+            max_tokens=2200,
             answer_prefix=output,
         )
     elif action_spec.output_type == 'CHOICE':
@@ -240,7 +250,26 @@ class BasicAgent(
     elif action_spec.output_type == 'FLOAT':
       raise NotImplementedError
 
+    def get_externality(externality):
+      return externality.update_after_event(output)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+      executor.map(get_externality, self._components.values())
+
     self._last_chain_of_thought = prompt.view().text().splitlines()
+    current_log = {
+        'date': self._clock.now(),
+        'Action prompt': self._last_chain_of_thought,
+    }
+
+    for comp in self._components.values():
+      last_log = comp.get_last_log()
+      if last_log:
+        if 'date' in last_log.keys():
+          last_log.pop('date')
+        current_log[comp.name()] = last_log
+
+    self._log.append(current_log)
 
     if self._verbose:
       self._print(

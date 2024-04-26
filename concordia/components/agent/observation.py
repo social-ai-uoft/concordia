@@ -15,7 +15,7 @@
 
 """Agent components for representing observation stream."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 import datetime
 from concordia.associative_memory import associative_memory
 from concordia.document import interactive_document
@@ -68,6 +68,12 @@ class Observation(component.Component):
     if self._verbose:
       self._log('\n'.join(mems) + '\n')
     return '\n'.join(mems) + '\n'
+
+  def get_last_log(self):
+    return {
+        'Summary': 'observation',
+        'state': self.state().splitlines(),
+    }
 
   def _log(self, entry: str):
     print(termcolor.colored(entry, self._log_colour), end='')
@@ -132,6 +138,7 @@ class ObservationSummary(component.Component):
         f'about {self._agent_name}.')
 
     self._verbose = verbose
+    self._history = []
 
   def name(self) -> str:
     return self._name
@@ -139,8 +146,15 @@ class ObservationSummary(component.Component):
   def state(self):
     return self._state
 
+  def get_last_log(self):
+    if self._history:
+      return self._history[-1].copy()
+
   def _log(self, entry: str):
     print(termcolor.colored(entry, self._log_colour), end='')
+
+  def get_components(self) -> Sequence[component.Component]:
+    return self._components
 
   def update(self):
     context = '\n'.join([
@@ -184,3 +198,11 @@ class ObservationSummary(component.Component):
 
     if self._verbose:
       self._log(self._state)
+
+    update_log = {
+        'date': self._clock_now(),
+        'Summary': 'observation summary',
+        'State': self._state,
+        'Chain of thought': prompt.view().text().splitlines(),
+    }
+    self._history.append(update_log)

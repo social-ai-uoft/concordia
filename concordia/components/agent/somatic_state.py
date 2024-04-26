@@ -21,6 +21,7 @@ from concordia.associative_memory import associative_memory
 from concordia.components.agent import characteristic
 from concordia.language_model import language_model
 from concordia.typing import component
+import termcolor
 
 
 class SomaticState(component.Component):
@@ -37,6 +38,7 @@ class SomaticState(component.Component):
       agent_name: str,
       clock_now: Callable[[], datetime.datetime] | None = None,
       summarize: bool = True,
+      verbose: bool = False,
   ):
     """Initialize somatic state component.
 
@@ -48,6 +50,7 @@ class SomaticState(component.Component):
       summarize: if True, the resulting state will be a one sentence summary,
         otherwise state it would be a concatenation of five separate
         characteristics
+      verbose: whether to print the state after updating or not
     """
     self._model = model
     self._memory = memory
@@ -55,6 +58,8 @@ class SomaticState(component.Component):
     self._agent_name = agent_name
     self._clock_now = clock_now
     self._summarize = summarize
+    self._verbose = verbose
+    self._last_update = datetime.datetime.min
 
     self._characteristic_names = [
         'level of hunger',
@@ -92,7 +97,25 @@ class SomaticState(component.Component):
   def state(self):
     return self._state
 
+  def get_last_log(self):
+    current_log = {
+        'Summary': f'somatic state of {self._agent_name}',
+        'state': self._state,
+    }
+    for comp in self._characteristics:
+      last_log = comp.get_last_log()
+      if last_log:
+        if 'date' in last_log.keys():
+          last_log.pop('date')
+        current_log[comp.name()] = last_log
+    return current_log
+
   def update(self):
+    if self._clock_now and self._last_update == self._clock_now():
+      return
+    if self._clock_now:
+      self._last_update = self._clock_now()
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
       for c in self._characteristics:
         executor.submit(c.update)
@@ -112,3 +135,6 @@ class SomaticState(component.Component):
       self._state = f'{self._agent_name} is ' + self._model.sample_text(
           f'{prompt}\n {self._agent_name} is ', max_tokens=500
       )
+
+    if self._verbose:
+      print(termcolor.colored(self._state, 'green'), end='')

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-"""Externality for the Game Master, which generates conversations."""
+"""Externality component for the Game Master, which generates conversations."""
 
 from collections.abc import Sequence
 import datetime
@@ -25,6 +24,7 @@ from concordia.associative_memory import blank_memories
 from concordia.clocks import game_clock
 from concordia.components import agent as sim_components
 from concordia.document import interactive_document
+from concordia.environment import game_master
 from concordia.environment.scenes import conversation as conversation_scene
 from concordia.language_model import language_model
 from concordia.typing import clock as clock_lib
@@ -44,12 +44,13 @@ class Conversation(component.Component):
       clock: game_clock.MultiIntervalClock,
       burner_memory_factory: blank_memories.MemoryFactory,
       cap_nonplayer_characters: int = 3,
-      game_master_instructions: str = '',
       shared_context: str = '',
       components: Sequence[component.Component] | None = None,
       allow_self_talk: bool = False,
+      review_participants: bool = True,
       verbose: bool = False,
-      print_colour: str = 'magenta',
+      npc_instructions: str = game_master.DEFAULT_GAME_MASTER_INSTRUCTIONS,
+      log_color: str = 'magenta',
   ):
     """Initializes the generator of conversations.
 
@@ -63,21 +64,25 @@ class Conversation(component.Component):
         npcs and conversation gm
       cap_nonplayer_characters: The maximum number of non-player characters
         allowed in the conversation.
-      game_master_instructions: A string to use as the game master instructions.
       shared_context: A string to use as the generic context for the NPCs.
       components: components that contextualise the conversation
       allow_self_talk: allow players to have a conversation with themselves
+      review_participants: whether or not to start each scene by declaring
+        who its participants are.
       verbose: Whether to print debug messages or not.
-      print_colour: colour in which to print logs
+      npc_instructions: by default use the standard game master instructions
+        for non-player characters. Otherwise override this with custom
+        instructions.
+      log_color: color in which to print logs
     """
     self._players = players
     self._model = model
     self._cap_nonplayer_characters = cap_nonplayer_characters
-    self._game_master_instructions = game_master_instructions
+    self._npc_instructions = npc_instructions
     self._shared_context = shared_context
     self._history = []
     self._verbose = verbose
-    self._print_colour = print_colour
+    self._log_color = log_color
     self._components = components or []
     self._clock = clock
     self._burner_memory_factory = burner_memory_factory
@@ -85,6 +90,7 @@ class Conversation(component.Component):
     self._allow_self_talk = allow_self_talk
     self._all_player_names = [player.name for player in self._players]
     self._min_speakers = 1 if self._allow_self_talk else 2
+    self._review_participants = review_participants
 
   def name(self) -> str:
     return 'Conversations'
@@ -100,7 +106,7 @@ class Conversation(component.Component):
     return [player.name for player in self._players]
 
   def _log(self, entry):
-    print(termcolor.colored(entry, self._print_colour))
+    print(termcolor.colored(entry, self._log_color))
 
   def _make_npc(
       self, name: str, scene_clock: clock_lib.GameClock
@@ -119,7 +125,7 @@ class Conversation(component.Component):
         clock=scene_clock,
         components=[
             generic_components.constant.ConstantComponent(
-                name='Instructions:', state=self._game_master_instructions
+                name='Instructions:', state=self._npc_instructions
             ),
             generic_components.constant.ConstantComponent(
                 name='General knowledge:', state=context
@@ -139,19 +145,21 @@ class Conversation(component.Component):
       self,
       prompt: interactive_document.InteractiveDocument,
       scene_clock: clock_lib.GameClock,
+      player_names_in_conversation: list[str],
   ) -> list[basic_agent.BasicAgent]:
-    prompt = prompt.copy()
     nonplayer_characters = []
+    player_names_in_conversation_str = ', '.join(player_names_in_conversation)
     npcs_exist = prompt.yes_no_question(
-        'Are there any non-player characters in the conversation?'
+        f'Aside from {player_names_in_conversation_str}, are there any '
+        'other people in the conversation?'
     )
 
     if npcs_exist:
       npcs = prompt.open_question(
-          'Provide the list of non-player characters in the conversation '
+          'Provide the list of additional individuals in the conversation '
           + 'as a comma-separated list. For example: "bartender, merchant" '
-          + 'or "accountant, pharmacist, fishmonger". Non-player '
-          + 'characters should be named only by generic characteristics '
+          + 'or "accountant, pharmacist, fishmonger". These additional '
+          + 'individuals should be named only by generic characteristics '
           + 'such as their profession or role (e.g. shopkeeper).'
       )
       npc_names = helper_functions.extract_from_generated_comma_separated_list(
@@ -169,7 +177,7 @@ class Conversation(component.Component):
   def _generate_convo_summary(self, convo: list[str]):
     summary = self._model.sample_text(
         '\n'.join(
-            convo + ['Summaries the conversation above in one sentence.'],
+            convo + ['Summarize the conversation above in one sentence.'],
         ),
         max_characters=2000,
         max_tokens=2000,
@@ -182,15 +190,19 @@ class Conversation(component.Component):
       player_names_in_conversation: list[str],
       nonplayers_in_conversation: list[basic_agent.BasicAgent],
   ):
-    who_talked = (
-        'Summary of a conversation between '
-        + ', '.join(player_names_in_conversation)
-        + '. '
-    )
+    if len(player_names_in_conversation) == 1:
+      self_talker = player_names_in_conversation[0]
+      who_talked = f'Summary of a conversation of {self_talker} with themself.'
+    else:
+      who_talked = (
+          'Summary of a conversation between '
+          + ', '.join(player_names_in_conversation)
+          + '. '
+      )
     if nonplayers_in_conversation:
       who_talked = (
           who_talked
-          + 'Also present: '
+          + ' Also present: '
           + ', '.join([
               npc_conversant.name
               for npc_conversant in nonplayers_in_conversation
@@ -198,6 +210,9 @@ class Conversation(component.Component):
           + '.'
       )
     return who_talked
+
+  def get_components(self) -> Sequence[component.Component]:
+    return self._components
 
   def update_after_event(
       self,
@@ -252,7 +267,7 @@ class Conversation(component.Component):
             + '.\n'
         )
       if self._verbose:
-        self._log(document.view().text())
+        self._log('\n\n Conversation preparation: \n' + document.view().text())
 
       if player_names_in_conversation:
         players_in_conversation = [
@@ -262,7 +277,7 @@ class Conversation(component.Component):
         ]
 
         nonplayers_in_conversation = self._get_nonplayer_characters(
-            document, self._clock
+            document, self._clock, player_names_in_conversation
         )
 
         # this ensures that npcs can't duplicate players due to LLM mistake
@@ -286,6 +301,7 @@ class Conversation(component.Component):
             memory_factory=self._burner_memory_factory,
             name='Conversation scene',
             premise=event_statement,
+            review_participants=self._review_participants,
         )
         with self._clock.higher_gear():
           scene_output = convo_scene.run_episode()

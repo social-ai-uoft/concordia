@@ -55,7 +55,7 @@ class DirectEffect(component.Component):
     self._memory = memory
 
   def name(self) -> str:
-    return 'Effect of event on players'
+    return 'Direct effects of the event on others'
 
   def _print(self, entry: str):
     print(termcolor.colored(entry, self._print_colour), end='')
@@ -69,6 +69,9 @@ class DirectEffect(component.Component):
   def get_last_log(self):
     if self._history:
       return self._history[-1].copy()
+
+  def get_components(self) -> Sequence[component.Component]:
+    return self._components
 
   def update_after_event(
       self,
@@ -91,11 +94,11 @@ class DirectEffect(component.Component):
       player_name = player.name
       player_doc = helper_functions.filter_copy_as_statement(document)
       affected = player_doc.yes_no_question(
-          f'Does the event affect {player_name} status?'
+          f'Does the event affect {player_name}?'
       )
       if affected:
         if self._verbose:
-          self._print(f'\n{player_name} affected, might not known.')
+          self._print(f'\n{player_name} affected, might not know it.')
         known = player_doc.yes_no_question(
             f'Does {player_name} know about the event?'
         )
@@ -103,11 +106,18 @@ class DirectEffect(component.Component):
           if self._verbose:
             self._print(f'\n{player_name} known.')
           _ = player_doc.open_question(
-              f'What does {player_name} know about the event?'
+              f'What does {player_name} know about the event?',
+              max_characters=3000,
+              max_tokens=2500,
           )
           how_player_saw_event_first_person = player_doc.open_question(
-              f"Concisely summarize the event from {player_name}'s "
-              + 'perspective using third-person limited point of view.'
+              f"Summarize the event from {player_name}'s "
+              + 'perspective using third-person limited point of view. '
+              + 'If the event contains a direct quotation of anything said '
+              + 'or written by anyone then it is important to include the '
+              + 'quote verbatim in the summary.',
+              max_characters=3000,
+              max_tokens=2500,
           )
           player.observe(how_player_saw_event_first_person)
           if self._verbose:
@@ -120,8 +130,10 @@ class DirectEffect(component.Component):
           if self._verbose:
             self._print(f'\n{player_name} not known.')
           effect_despite_ignorance = player_doc.open_question(
-              f'How does the event affect {player_name}`s status, despite them'
-              ' not knowing about it?'
+              f"How does the event affect {player_name}'s status, despite them"
+              ' not knowing about it?',
+              max_characters=3000,
+              max_tokens=2500,
           )
           if self._verbose:
             self._print(
@@ -136,7 +148,7 @@ class DirectEffect(component.Component):
     if direct_effect_on_someone:
       if self._verbose:
         self._print(
-            '\nThe event had a direct affect on one of the players, resolving.'
+            '\nThe event had a direct effect on one of the players, resolving.'
         )
 
       with concurrent.futures.ThreadPoolExecutor() as executor:

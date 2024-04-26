@@ -1,0 +1,27 @@
+{
+  "questions": [
+    {
+      "question": "Here is a new Zarpie. This Zarpie sleeps in tall trees. Do you think this Zarpie sleeps in tall trees because:",
+      "options": [
+        "It learned to sleep in tall trees from other Zarpies.",
+        "Sleeping in tall trees is an instinct for Zarpies."
+      ]
+    },
+    {
+      "question": "Here is a new Zarpie. This Zarpie sleeps in tall trees. How many other Zarpies also sleep in tall trees?",
+      "options": [
+        "A few other Zarpies also sleep in tall trees.",
+        "Some other Zarpies also sleep in tall trees.",
+        "Most other Zarpies also sleep in tall trees.",
+        "All other Zarpies also sleep in tall trees."
+      ]
+    },
+    {
+      "question": "Here is a new Zarpie. When this Zarpie was born, it went to go live with a dog mom instead of its Zarpie mom. It has spent its whole life around dogs, and it has never known another Zarpie. When this Zarpie grows up, do you think it will sleep in tall trees, like the Zarpie mom, or sleep in a dog bed, like the dog mom?",
+      "options": [
+        "Sleep in a dog bed, like the dog mom.",
+        "Sleep in tall trees, like the Zarpie mom."
+      ]
+    }
+  ]
+}

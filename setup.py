@@ -15,11 +15,37 @@
 
 """Install script for setuptools."""
 
+import platform
 import setuptools
+
+IS_M1_OSX = platform.system() == 'Darwin' and platform.machine() == 'arm64'
+
+REQUIREMENTS = (
+    # TODO: b/312199199 - remove some requirements.
+    'absl-py',
+    'google-cloud-aiplatform',
+    'ipython',
+    'langchain',
+    'matplotlib',
+    'numpy',
+    'openai>=1.3.0',
+    'pandas<=2.0.3',
+    'python-dateutil',
+    'reactivex',
+    'retry',
+    'scipy',
+    'tensorflow',
+    'tensorflow-hub',
+    'tensorflow-text',
+    'termcolor',
+    'typing-extensions',
+)
+M1_OSX_REQUIREMENTS = tuple(set(REQUIREMENTS) - {'tensorflow-text'})
+
 
 setuptools.setup(
     name='gdm-concordia',
-    version='1.0.0',
+    version='1.2.0',
     license='Apache 2.0',
     license_files=['LICENSE'],
     url='https://github.com/google-deepmind/concordia',
@@ -42,35 +68,14 @@ setuptools.setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: MacOS :: MacOS X',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
-    package_dir={
-        'concordia': 'concordia',
-    },
+    packages=setuptools.find_packages(include=['concordia', 'concordia.*']),
     package_data={},
-    python_requires='>=3.10',
-    install_requires=[
-        # TODO: b/312199199 - remove some requirements.
-        'absl-py',
-        'google-cloud-aiplatform',
-        'ipython',
-        'matplotlib',
-        'numpy',
-        'openai>=1.3.0',
-        'pandas==1.5.3',
-        'python-dateutil',
-        'reactivex',
-        'retry',
-        'scipy',
-        'tensorflow',
-        'tensorflow-hub',
-        'tensorflow-text',
-        'termcolor',
-        'typing-extensions',
-    ],
+    python_requires='>=3.11',
+    install_requires=M1_OSX_REQUIREMENTS if IS_M1_OSX else REQUIREMENTS,
     extras_require={
         # Used in development.
         'dev': [

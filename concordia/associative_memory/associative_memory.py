@@ -27,6 +27,15 @@ import numpy as np
 import pandas as pd
 
 
+def _check_date_in_range(timestamp: datetime.datetime) -> None:
+  if timestamp < pd.Timestamp.min:
+    min_date = pd.Timestamp.min
+    raise ValueError(f'timestamp {timestamp} < pd.Timestamp.min {min_date}')
+  if timestamp > pd.Timestamp.max:
+    max_date = pd.Timestamp.max
+    raise ValueError(f'timestamp {timestamp} > pd.Timestamp.max {max_date}')
+
+
 class AssociativeMemory:
   """Class that implements associative memory."""
 
@@ -55,16 +64,17 @@ class AssociativeMemory:
     )
     self._clock_now = clock
     self._interval = clock_step_size
+    self._stored_hashes = set()
 
   def add(
       self,
       text: str,
       *,
       timestamp: datetime.datetime | None = None,
-      tags: list[str] | None = None,
+      tags: Iterable[str] = (),
       importance: float | None = None,
   ):
-    """Adds the text to the memory.
+    """Adds nonduplicated entries (time, text, tags, importance) to the memory.
 
     Args:
       text: what goes into the memory
@@ -72,30 +82,31 @@ class AssociativeMemory:
       tags: optional tags
       importance: optionally set the importance of the memory.
     """
-
-    embedding = self._embedder(text)
     if importance is None:
       importance = self._importance(text)
 
     if timestamp is None:
       timestamp = self._clock_now()
 
-    new_df = (
-        pd.Series({
-            'text': text,
-            'time': timestamp,
-            'tags': tags,
-            'embedding': embedding,
-            'importance': importance,
-        })
-        .to_frame()
-        .T
-    )
+    _check_date_in_range(timestamp)
+
+    contents = {
+        'text': text,
+        'time': timestamp,
+        'tags': tuple(tags),
+        'importance': importance,
+    }
+    hashed_contents = hash(contents.values())
+    derived = {'embedding': self._embedder(text)}
+    new_df = pd.Series(contents | derived).to_frame().T
 
     with self._memory_bank_lock:
+      if hashed_contents in self._stored_hashes:
+        return
       self._memory_bank = pd.concat(
           [self._memory_bank, new_df], ignore_index=True
       )
+      self._stored_hashes.add(hashed_contents)
 
   def extend(
       self,
@@ -331,3 +342,12 @@ class AssociativeMemory:
         self._pd_to_text(data, add_time=add_time, sort_by_time=True),
         list(data['importance']),
     )
+
+  def __len__(self):
+    """Returns the number of entries in the memory bank.
+
+    Since memories cannot be deleted, the length cannot decrease, and can be
+    used to check if the contents of the memory bank have changed.
+    """
+    with self._memory_bank_lock:
+      return len(self._memory_bank)

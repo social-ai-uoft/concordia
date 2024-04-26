@@ -33,7 +33,7 @@ class PersonBySituation(component.Component):
       model: language_model.LanguageModel,
       memory: associative_memory.AssociativeMemory,
       agent_name: str,
-      components=Sequence[component.Component] | None,
+      components: Sequence[component.Component] | None = None,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 25,
       verbose: bool = False,
@@ -60,6 +60,8 @@ class PersonBySituation(component.Component):
     self._clock_now = clock_now
     self._num_memories_to_retrieve = num_memories_to_retrieve
     self._name = name
+    self._last_update = self._clock_now() - datetime.timedelta(days=365)
+    self._history = []
 
   def name(self) -> str:
     return self._name
@@ -67,7 +69,15 @@ class PersonBySituation(component.Component):
   def state(self) -> str:
     return self._state
 
+  def get_last_log(self):
+    if self._history:
+      return self._history[-1].copy()
+
   def update(self) -> None:
+    if self._clock_now() == self._last_update:
+      return
+    self._last_update = self._clock_now()
+
     prompt = interactive_document.InteractiveDocument(self._model)
 
     mems = '\n'.join(
@@ -84,14 +94,16 @@ class PersonBySituation(component.Component):
         for construct in self._components
     ])
 
-    prompt.statement(component_states)
+    prompt.statement(
+        f'***\nCurrent time: {self._clock_now()}\n' + component_states)
     question = (
         f'What would a person like {self._agent_name} do in a situation like'
         ' this?'
     )
     if self._clock_now is not None:
-      question = f'Current time: {self._clock_now()}.\n{question}'
+      question = f'{question}'
 
+    old_state = self._state
     self._state = prompt.open_question(
         question,
         answer_prefix=f'{self._agent_name} would ',
@@ -101,6 +113,17 @@ class PersonBySituation(component.Component):
 
     self._state = f'{self._agent_name} would {self._state}'
 
+    if old_state != self._state:
+      self._memory.add(f'[intent reflection] {self._state}')
+
     self._last_chain = prompt
     if self._verbose:
-      print(termcolor.colored(self._last_chain.view().text(), 'red'), end='')
+      print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
+    update_log = {
+        'date': self._clock_now(),
+        'Summary': question,
+        'State': self._state,
+        'Chain of thought': prompt.view().text().splitlines(),
+    }
+    self._history.append(update_log)

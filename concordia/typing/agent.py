@@ -31,7 +31,7 @@ class ActionSpec:
   """A specification of the action that agent is queried for.
 
   Attributes:
-    call_to_action: fromated text that conditions agents response. {agent_name}
+    call_to_action: formatted text conditioning agent response. {agent_name}
       and {timedelta} will be inserted by the agent.
     output_type: type of output - FREE, CHOICE or FLOAT
     options: if multiple choice, then provide possible answers here
@@ -48,15 +48,14 @@ OUTPUT_TYPES = ['FREE', 'CHOICE', 'FLOAT']
 
 DEFAULT_CALL_TO_SPEECH = (
     'Given the above, what is {agent_name} likely to say next? Respond in'
-    ' the format `{agent_name} says: "..."` For example, '
-    'Cristina says: "Hello! Mighty fine weather today, right?" '
-    'or Ichabod says: "I wonder if the alfalfa is ready to harvest.\n'
+    ' the format `{agent_name} -- "..."` For example, '
+    'Cristina -- "Hello! Mighty fine weather today, right?", '
+    'Ichabod -- "I wonder if the alfalfa is ready to harvest", or '
+    'Townsfolk -- "Good morning".\n'
 )
 
 DEFAULT_CALL_TO_ACTION = (
-    'What would {agent_name} do for the next'
-    ' {timedelta} to best achieve their goal? Consider their'
-    ' plan, but deviate from it if necessary. '
+    'What would {agent_name} do for the next {timedelta}? '
     'Give a specific activity. Pick an activity that '
     'would normally take about {timedelta} to complete. '
     'If the selected action has a direct or indirect object then it '
