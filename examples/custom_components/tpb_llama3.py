@@ -659,7 +659,16 @@ class TPB(TPBComponent):
     super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
 
-    self._components = components
+    self._components = {}
+    for comp in components:
+      self.add_component(comp)
+
+  def add_component(self, comp: component.Component) -> None:
+    """Add a component."""
+    if comp.name() in self._components:
+      raise ValueError(f'Duplicate component name: {comp.name()}')
+    else:
+      self._components[comp.name()] = comp
 
   def jsonify(self) -> list:
     """Take the output of the LLM and reformat it into a JSON array."""
@@ -667,16 +676,12 @@ class TPB(TPBComponent):
 
   def update(self) -> None:
 
-    self._jsons: list[list[dict]] = []
-    self._json: list[dict] = []
-
-    for component in self._components:
-      if component.name == ["attitude", "norm"]:
-        self._jsons.append(component.json())
-
-    for _json in self._jsons:
-      temp = defaultdict(set)
-      for i in range(len(_json)):
-        for k, v in _json[i].items():
-          temp[k].add(v)
-      self._json.append(temp)
+    behaviours = [re.search(r'(.*?)(?=:)', behaviour["behaviour"]).group(1).replace('*', '').strip() for behaviour in self._components["attitude"].json()]
+    attitudes = zscore([behaviour["attitude"] for behaviour in self._components["attitude"].json()])
+    norms = zscore([behaviour["norm"] for behaviour in self._components["norm"].json()])
+    # Weighting factor
+    w = 0.5
+    behavioural_intentions = (w * attitudes) + ((1 - w) * norms)
+    for i in range(len(behaviours)):
+      print(f"Behaviour: {behaviours[i]}")
+      print(f"Attitude: {attitudes[i]}, Norm: {norms[i]}, Intention: {behavioural_intentions[i]}")
