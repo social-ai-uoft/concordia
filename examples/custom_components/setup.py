@@ -1,4 +1,5 @@
 import datetime
+from sentence_transformers import SentenceTransformer
 
 from concordia.agents import basic_agent
 from concordia.components import agent as components
@@ -10,6 +11,7 @@ from concordia.associative_memory import importance_function
 from concordia.clocks import game_clock
 from concordia.components import game_master as gm_components
 from concordia.environment import game_master
+from concordia.language_model import language_model
 from concordia.metrics import goal_achievement
 from concordia.metrics import common_sense_morality
 from concordia.metrics import opinion_of_others
@@ -33,7 +35,7 @@ def model_setup(
     model_name: str,
     local_models: bool = True,
     **kwargs
-):
+) -> tuple[language_model.LanguageModel, SentenceTransformer.encode]:
   """Return a tuple of relevant model objects
   
   Args:
@@ -46,10 +48,6 @@ def model_setup(
       model_name='llama3:70b',
       streaming=kwargs['streaming']
     )
-    # Setup sentence encoder
-    from sentence_transformers import SentenceTransformer
-    st5_model = SentenceTransformer(kwargs['transformer_name'],trust_remote_code=True) 
-    embedder = st5_model.encode
 
   else:
     # Use API access
@@ -60,13 +58,18 @@ def model_setup(
       model = gcloud_model.CloudLanguageModel(project_id=kwargs["CLOUD_PROJECT_ID"])
     else:
       model = gpt_model.GptLanguageModel(api_key=kwargs["GPT_API_KEY"], model_name=model_name)
+  
+  # Setup sentence encoder
+  st5_model = SentenceTransformer(kwargs['transformer_name'],trust_remote_code=True) 
+  embedder = st5_model.encode
+
   return model, embedder
 
 def measurement_setup(
     SETUP_TIME: datetime.date = datetime.datetime(hour=20, year=2024, month=10, day=1),
     START_TIME: datetime.date = datetime.datetime(hour=18, year=2024, month=10, day=2),
     time_step = datetime.timedelta(minutes=20)
-) -> tuple:
+) -> tuple[measurements_lib.Measurements, game_clock.MultiIntervalClock]:
   # Setup measurements and clock
   measurements = measurements_lib.Measurements()
 
@@ -76,4 +79,3 @@ def measurement_setup(
     step_sizes=[time_step, datetime.timedelta(seconds=10)])
   
   return measurements, clock
-  

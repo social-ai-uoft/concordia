@@ -17,9 +17,11 @@ import datetime
 import re
 import concurrent.futures
 import json
+import os
 import termcolor
+import numpy as np
 
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Union
 from collections import defaultdict
 from retry import retry
 from scipy.stats import zscore
@@ -30,6 +32,8 @@ from concordia.associative_memory import formative_memories
 from concordia.document import interactive_document
 from concordia.language_model import language_model
 from concordia.typing import component
+
+from examples.custom_components import utils
 
 
 MAX_JSONIFY_ATTEMPTS = 5
@@ -65,6 +69,7 @@ class TPBComponent(component.Component):
     self._model = model
     self._memory = memory
     self._state = ''
+    self._config = player_config
     self._agent_name = player_config.name
     self._goal = player_config.goal
     self._traits = player_config.traits
@@ -219,6 +224,8 @@ class Attitude(TPBComponent):
       r"\n\nBEHAVIOUR\n\n",
       self._state
     )
+    self._state.replace("\n\nBEHAVIOUR\n\n", "")
+
     # Get all behaviours from the list
     behaviour_list = self._components[0].json()
     # Create output array
@@ -370,6 +377,8 @@ class People(TPBComponent):
       r"\n\nBEHAVIOUR\n\n",
       self._state
     )
+    self._state.replace("\n\nBEHAVIOUR\n\n", "")
+
     # Get all behaviours from the list
     behaviour_list = self._components[0].json()
     # Create output array
@@ -494,6 +503,7 @@ class Motivation(TPBComponent):
   def jsonify(self) -> list:
 
     motiv_list = self._state.split("\n\nPEOPLE\n\n")
+    self._state = self._state.replace("\n\nPEOPLE\n\n", "")
     motivs = {}
 
     for motiv, person in zip(motiv_list, self._all_people):
@@ -638,6 +648,7 @@ class TPB(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[TPBComponent],
+      w: float = 0.5,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -650,6 +661,8 @@ class TPB(TPBComponent):
       memory: Associative memory.
       player_config: An AgentConfig object containing details about the agent.
       components: A sequence including a Behaviour component.
+      w: The weight parameter. Default is 0.5 (equal weight given to attitudes and subjective norms). 
+      A higher value indicates more weight towards attitudes, lower indicates more weight towards subjective norms.
       clock_now: time callback to use for the state.
       num_memories_to_retrieve: Number of memories to retrieve.
       verbose: Whether to print the state.
@@ -659,6 +672,7 @@ class TPB(TPBComponent):
     super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
 
+    self._w = w
     self._components = {}
     for comp in components:
       self.add_component(comp)
@@ -670,18 +684,88 @@ class TPB(TPBComponent):
     else:
       self._components[comp.name()] = comp
 
-  def jsonify(self) -> list:
-    """Take the output of the LLM and reformat it into a JSON array."""
-    pass
+  def collate(self, measure: str) -> list:
+    if measure == "behaviour":
+      return [re.search(r'(.*?)(?=:)', behaviour["behaviour"]).group(1).replace('*', '').strip() for behaviour in self._components["attitude"].json()]
+    else:
+      return [behaviour[measure] for behaviour in self._components[measure].json()]
+    
+  def evaluate_intentions(self) -> np.ndarray:
+    """
+    Compute the behavioural intentions.
+    """
+    attitudes = zscore(self.collate("attitude"))
+    norms = zscore(self.collate("norm"))
+    
+    w = self._w
+    # Weigh the two values
+    behavioural_intentions = (w * attitudes) + ((1 - w) * norms)
+    # Compute softmax
+    behav_probs = softmax(behavioural_intentions)
+    return behav_probs
+  
+  def evaluate_probability_of_behaviour(self, behaviour: int | str) -> float:
+    """Compute the probability of a behaviour.
+    
+    Args:
+      behaviour: An integer indicating the index of the behaviour or a string matching the description of the behaviour."""
+    
+    if isinstance(behaviour, str):
+      behaviours = self.collate("behaviour")
+      index = behaviours.index(behaviours)
+    else:
+      index = behaviour
+    
+    return self.evaluate_intentions()[index]
+  
+  def plot(self, file_path: Union[str, os.PathLike] | None = None) -> None:
+    """Plot the outputs.
+    
+    Args:
+      file_path: An optional string or PathLike indicating the location to save the file."""
+    import matplotlib.pyplot as plt
+
+    behaviours = self.collate("behaviour")
+    attitudes = self.collate("attitude")
+    norms = self.collate("norm")
+    behav_probs = self.evaluate_intentions()
+
+    bw = 0.25
+
+    b1 = np.arange(len(attitudes))
+    b2 = [x + bw for x in b1]
+    b3 = [x + bw for x in b2]
+
+    plt.figure(figsize=(8,8))
+
+    plt.barh(b3, softmax(attitudes), height = bw, color = 'darkgreen', label = 'Attitudes')
+    plt.barh(b2, softmax(norms), height = bw, color = 'limegreen', label = 'Subjective Norms')
+    plt.barh(b1, behav_probs, height = bw, color = 'forestgreen', label = 'Behavioural Intentions')
+
+    plt.ylabel('Behaviours')
+    plt.xlabel('Action Probability')
+    plt.yticks([x + bw for x in b1], behaviours)
+    plt.xlim((0, 0.6))
+    # plt.yticks(rotation=90)
+    # plt.subplots_adjust(bottom=0.50)
+    plt.tight_layout()
+    plt.legend(loc="upper right")
+    if file_path is not None:
+      plt.savefig(file_path, dpi = 150)
+
+    plt.show()
 
   def update(self) -> None:
 
-    behaviours = [re.search(r'(.*?)(?=:)', behaviour["behaviour"]).group(1).replace('*', '').strip() for behaviour in self._components["attitude"].json()]
-    attitudes = zscore([behaviour["attitude"] for behaviour in self._components["attitude"].json()])
-    norms = zscore([behaviour["norm"] for behaviour in self._components["norm"].json()])
     # Weighting factor
     w = 0.5
-    behavioural_intentions = (w * attitudes) + ((1 - w) * norms)
-    for i in range(len(behaviours)):
-      print(f"Behaviour: {behaviours[i]}")
-      print(f"Attitude: {attitudes[i]}, Norm: {norms[i]}, Intention: {behavioural_intentions[i]}")
+    behav_probs = self.evaluate_intentions(w=w)
+
+    # Choose behaviour
+    behaviours = self.collate("behaviour")
+    chosen_behav = np.random.choice(behaviours, p=behav_probs)
+
+    self._state = (
+      f'After considering {utils.pronoun(self._config, case = "genitive")} options, '
+      f"{self._agent_name}'s current goal is to successfully accomplish or complete the following behaviour: {chosen_behav}."
+    )
