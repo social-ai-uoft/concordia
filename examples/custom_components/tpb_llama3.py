@@ -65,6 +65,7 @@ class TPBComponent(component.Component):
     self._num_memories_to_retrieve = num_memories_to_retrieve
     self._name = name
     self._json = []
+    self._is_initialized = False
     
   def name(self) -> str:
     return self._name
@@ -78,6 +79,19 @@ class TPBComponent(component.Component):
   def jsonify(self) -> list[dict]:
     """Take the output of the LLM and reformat it into a JSON array."""
     pass
+
+  def _update(self) -> None:
+    pass
+
+  def update(self) -> None:
+    if self._is_initialized:
+      if self._verbose:
+        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:", color='light_green'))
+      self._update()
+    else:
+      if self._verbose:
+        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component has been fully activated.", color='light_green'))
+      self._is_initialized = True
 
 class Behaviour(TPBComponent):
   """This component generates a list of candidate behaviours for an agent to take."""
@@ -128,7 +142,7 @@ class Behaviour(TPBComponent):
     return behaviour_list
       
   @retry(AssertionError, tries = 5)
-  def update(self) -> None:
+  def _update(self) -> None:
     mems = '\n'.join(
         self._memory.retrieve_recent(
             self._num_memories_to_retrieve, add_time=True
@@ -258,7 +272,7 @@ class Attitude(TPBComponent):
     return output
        
   @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
-  def update(self) -> None:
+  def _update(self) -> None:
     mems = '\n'.join(
         self._memory.retrieve_recent(
             self._num_memories_to_retrieve, add_time=True
@@ -399,7 +413,7 @@ class People(TPBComponent):
     return output
 
   @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
-  def update(self) -> None:
+  def _update(self) -> None:
     mems = '\n'.join(
         self._memory.retrieve_recent(
             self._num_memories_to_retrieve, add_time=True
@@ -515,7 +529,7 @@ class Motivation(TPBComponent):
     return output
 
   @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
-  def update(self) -> None:
+  def _update(self) -> None:
 
     mems = '\n'.join(
         self._memory.retrieve_recent(
@@ -744,6 +758,18 @@ class TPB(TPBComponent):
     plt.show()
 
   def update(self) -> None:
+    if self._is_initialized:
+      if self._verbose:
+        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:", color='light_green'))
+      self._update()
+    else:
+      if self._verbose:
+        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component has been fully activated.", color='light_green'))
+      self._is_initialized = True
+      self._components["thin_goal"].update()
+      self._state = self._components["thin_goal"].state()
+
+  def _update(self) -> None:
 
     # Weighting factor
     w = 0.5
@@ -757,3 +783,78 @@ class TPB(TPBComponent):
       f'After considering {utils.pronoun(self._config, case = "genitive")} options, '
       f"{self._agent_name}'s current goal is to successfully accomplish or complete the following behaviour: {chosen_behav}."
     )
+
+    if self._verbose:
+      behaviours = self.collate("behaviour")
+      attitudes = self.collate("attitude")
+      norms = self.collate("norm")
+      behav_probs = self.evaluate_intentions()
+      for i in range(len(behaviours)):
+        print(termcolor.colored(f"Behaviour: {behaviours[i]}.", color="green"))
+        print(termcolor.colored(f"Attitude: {round(attitudes[i], 2)}. Norm: {round(norms[i], 2)}. Action probability: {round(behav_probs[i], 2)}", color="green"))
+      print(termcolor.colored(self._state, 'green'), end='')
+
+class ThinGoal(TPBComponent):
+  """ThinGoal outputs a goal based on the player configuration goal."""
+
+  def __init__(
+      self,
+      name: str,
+      model: language_model.LanguageModel,
+      memory: associative_memory.AssociativeMemory,
+      player_config: formative_memories.AgentConfig,
+      clock_now: Callable[[], datetime.datetime] | None = None,
+      num_memories_to_retrieve: int = 100,
+      verbose: bool = False,
+  ):
+    
+    """Initializes the ThinGoal component.
+
+    Args:
+      name: Name of the component.
+      model: Language model.
+      memory: Associative memory.
+      player_config: An AgentConfig object containing details about the agent.
+      num_behavs: The number of behaviours to generate.
+      clock_now: time callback to use for the state.
+      num_memories_to_retrieve: Number of memories to retrieve.
+      verbose: Whether to print the state.
+    """
+    
+    super().__init__(name, model, memory, player_config, clock_now, num_memories_to_retrieve, verbose)
+    self._is_initialized = True
+
+  def update(self) -> None:
+
+    mems = '\n'.join(
+          self._memory.retrieve_recent(
+              self._num_memories_to_retrieve, add_time=True
+          )
+      )
+
+    prompt = interactive_document.InteractiveDocument(self._model)
+    prompt.statement(f"Memories of {self._agent_name}:\n{mems}")
+
+    if self._clock_now is not None:
+      prompt.statement(f"Current time: {self._clock_now()}.\n")
+
+    prompt.statement(f"Traits of {self._agent_name}: {self._traits}")
+    prompt.statement(f"Goals of {self._agent_name}: {self._goal}")
+
+    question = (
+        f"Instructions: \n"
+        f"Given the memories above, restate {self._agent_name}'s goal in one sentence."
+    )
+
+    self._state = prompt.open_question(
+      question,
+      max_characters=5000,
+      max_tokens=3000
+    )
+    
+    self._json = self.jsonify()
+
+    self._last_chain = prompt
+
+    if self._verbose:
+      print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
