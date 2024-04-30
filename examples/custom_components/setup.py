@@ -45,7 +45,7 @@ def model_setup(
     # Setup language model
     from concordia.language_model import ollama_model
     model = ollama_model.OllamaLanguageModel(
-      model_name='llama3:70b',
+      model_name=model_name,
       streaming=kwargs['streaming']
     )
 

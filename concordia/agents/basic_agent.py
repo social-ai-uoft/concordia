@@ -183,6 +183,8 @@ class BasicAgent(
 
   def _maybe_update(self):
     next_update = self._last_update + self._update_interval
+    self._print(f"Last update: {self._last_update}")
+    self._print(f"Updating?: {self._clock.now() >= next_update}")
     if self._clock.now() >= next_update and not self._under_interrogation:
       self._update()
 

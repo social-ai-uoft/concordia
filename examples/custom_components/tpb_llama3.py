@@ -226,7 +226,7 @@ class Attitude(TPBComponent):
       r"\n\nBEHAVIOUR\n\n",
       self._state
     )
-    self._state.replace("\n\nBEHAVIOUR\n\n", "")
+    self._state = self._state.replace("\n\nBEHAVIOUR\n\n", "")
 
     # Get all behaviours from the list
     behaviour_list = self._components[0].json()
@@ -271,7 +271,7 @@ class Attitude(TPBComponent):
       })
     return output
        
-  @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
+  # @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
   def _update(self) -> None:
     mems = '\n'.join(
         self._memory.retrieve_recent(
@@ -379,7 +379,7 @@ class People(TPBComponent):
       r"\n\nBEHAVIOUR\n\n",
       self._state
     )
-    self._state.replace("\n\nBEHAVIOUR\n\n", "")
+    self._state = self._state.replace("\n\nBEHAVIOUR\n\n", "")
 
     # Get all behaviours from the list
     behaviour_list = self._components[0].json()
@@ -412,7 +412,7 @@ class People(TPBComponent):
 
     return output
 
-  @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
+  # @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
   def _update(self) -> None:
     mems = '\n'.join(
         self._memory.retrieve_recent(
@@ -528,7 +528,7 @@ class Motivation(TPBComponent):
     
     return output
 
-  @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
+  # @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
   def _update(self) -> None:
 
     mems = '\n'.join(
@@ -631,7 +631,7 @@ class SubjectiveNorm(TPBComponent):
     return(sum([v * l for v, l in zip(vs, ls)]))
           
 
-  @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
+  # @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
   def update(self) -> None:
     
     # Take the motivation json
@@ -687,6 +687,9 @@ class TPB(TPBComponent):
       self._components[comp.name()] = comp
 
   def collate(self, measure: str) -> list:
+    print(f"Collating {measure}...")
+    print([behaviour["behaviour"] for behaviour in self._components["attitude"]])
+
     if measure == "behaviour":
       return [re.search(r'(.*?)(?=:)', behaviour["behaviour"]).group(1).replace('*', '').strip() for behaviour in self._components["attitude"].json()]
     else:
@@ -782,14 +785,14 @@ class TPB(TPBComponent):
       'Initializing _update()...', color="light_magenta"
     ))
     behaviours = self.collate("behaviour")
-    attitudes = self.collate("attitude")
-    norms = self.collate("norm")
-    behav_probs = self.evaluate_intentions()
-    print(termcolor.colored(f"Did TPB actually successfully get its stuff?", color="orange"))
     print(termcolor.colored(behaviours, color="orange"))
-    print(termcolor.colored(norms, color="orange"))
+    attitudes = self.collate("attitude")
     print(termcolor.colored(attitudes, color="orange"))
+    norms = self.collate("norm")
+    print(termcolor.colored(norms, color="orange"))
+    behav_probs = self.evaluate_intentions()
     print(termcolor.colored(behav_probs, color="orange"))
+    print(termcolor.colored(f"Did TPB actually successfully get its stuff?", color="orange"))
 
     # Weighting factor
     w = 0.5
@@ -874,3 +877,15 @@ class ThinGoal(TPBComponent):
 
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
+class SequentialTPBModel(component.Component):
+  """
+  Explicit sequential model for the Theory of Planned Behaviour.
+  """
+  def __init__(
+      name: str,
+      model: language_model.LanguageModel,
+      player_config: formative_memories.AgentConfig,
+      commponents: Sequence[component.Component],
+      clock_now: Callable[[], datetime.datetime] | None = None,
+  )

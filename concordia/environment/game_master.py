@@ -304,12 +304,12 @@ class GameMaster(simulacrum_game_master.GameMaster):
 
     self.view_for_player(player_name=player.name)
 
-    self._print()
-
     if action_spec:
       action_spec_this_time = action_spec
     else:
       action_spec_this_time = self._action_spec
+
+    self._print('Preparing to act...', color="light_magenta")
 
     action = player.act(action_spec_this_time)
 
