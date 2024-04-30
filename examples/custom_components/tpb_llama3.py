@@ -888,4 +888,5 @@ class SequentialTPBModel(component.Component):
       player_config: formative_memories.AgentConfig,
       commponents: Sequence[component.Component],
       clock_now: Callable[[], datetime.datetime] | None = None,
-  )
+  ):
+    pass
