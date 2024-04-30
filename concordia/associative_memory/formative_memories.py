@@ -213,7 +213,7 @@ class FormativeMemoryFactory:
         terminators=[],
     )
 
-    episodes = [item for item in aggregated_result.split('\n\n') if item]
+    episodes = [item for item in aggregated_result.split('\n\n') if item and len(item) > 10]
 
     if len(episodes) != len(list(agent_config.formative_ages)):
       logger.warning(

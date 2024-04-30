@@ -1,16 +1,5 @@
-# Copyright 2023 DeepMind Technologies Limited.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Author: Rebekah Gelpi
+# Concordia Cognitive Model: Theory of Planned Behaviour
 
 """Agent component for self perception."""
 import datetime
@@ -34,7 +23,6 @@ from concordia.language_model import language_model
 from concordia.typing import component
 
 from examples.custom_components import utils
-
 
 MAX_JSONIFY_ATTEMPTS = 5
 
@@ -239,7 +227,7 @@ class Attitude(TPBComponent):
         lines = [item.strip() for item in re.split(r'\d[\.:]\s', section) if item.strip()]
         for line in lines:
           # Check if two sets of parentheses are in the line
-          if 0 not in [char in line for char in ["(", ")"]]:
+          if (0 not in [char in line for char in ["(", ")"]]) or (0 not in [char in line for char in [":", "*"]]):
             # Dictionary for each consequence including description, value, likelihood
             consequence = {}
 
@@ -745,7 +733,7 @@ class TPB(TPBComponent):
     plt.ylabel('Behaviours')
     plt.xlabel('Action Probability')
     plt.yticks([x + bw for x in b1], behaviours)
-    plt.xlim((0, 0.6))
+    plt.xlim((0, 1))
     # plt.yticks(rotation=90)
     # plt.subplots_adjust(bottom=0.50)
     plt.tight_layout()
