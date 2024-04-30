@@ -758,6 +758,10 @@ class TPB(TPBComponent):
     plt.show()
 
   def update(self) -> None:
+    print(termcolor.colored(
+      'Checking parameters to see if this function is being called and appropriately initialized.', color="light_magenta"
+    ))
+    print(f"Initialization: {self._is_initialized}")
     if self._is_initialized:
       if self._verbose:
         print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:", color='light_green'))
@@ -766,10 +770,26 @@ class TPB(TPBComponent):
       if self._verbose:
         print(termcolor.colored(f"{self._agent_name}'s {self.name()} component has been fully activated.", color='light_green'))
       self._is_initialized = True
+      print(termcolor.colored(
+      'Using the thin goal...', color="light_magenta"
+      ))
       self._components["thin_goal"].update()
       self._state = self._components["thin_goal"].state()
 
   def _update(self) -> None:
+
+    print(termcolor.colored(
+      'Initializing _update()...', color="light_magenta"
+    ))
+    behaviours = self.collate("behaviour")
+    attitudes = self.collate("attitude")
+    norms = self.collate("norm")
+    behav_probs = self.evaluate_intentions()
+    print(termcolor.colored(f"Did TPB actually successfully get its stuff?", color="orange"))
+    print(termcolor.colored(behaviours, color="orange"))
+    print(termcolor.colored(norms, color="orange"))
+    print(termcolor.colored(attitudes, color="orange"))
+    print(termcolor.colored(behav_probs, color="orange"))
 
     # Weighting factor
     w = 0.5
@@ -785,14 +805,10 @@ class TPB(TPBComponent):
     )
 
     if self._verbose:
-      behaviours = self.collate("behaviour")
-      attitudes = self.collate("attitude")
-      norms = self.collate("norm")
-      behav_probs = self.evaluate_intentions()
       for i in range(len(behaviours)):
-        print(termcolor.colored(f"Behaviour: {behaviours[i]}.", color="green"))
-        print(termcolor.colored(f"Attitude: {round(attitudes[i], 2)}. Norm: {round(norms[i], 2)}. Action probability: {round(behav_probs[i], 2)}", color="green"))
-      print(termcolor.colored(self._state, 'green'), end='')
+        print(termcolor.colored(f"Behaviour: {behaviours[i]}.", color="orange"))
+        print(termcolor.colored(f"Attitude: {round(attitudes[i], 2)}. Norm: {round(norms[i], 2)}. Action probability: {round(behav_probs[i], 2)}", color="orange"))
+      print(termcolor.colored(self._state, 'orange'), end='')
 
 class ThinGoal(TPBComponent):
   """ThinGoal outputs a goal based on the player configuration goal."""

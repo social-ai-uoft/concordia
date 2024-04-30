@@ -171,7 +171,12 @@ class GameMaster(simulacrum_game_master.GameMaster):
     return list(self._players_by_name.keys())
 
   def update_from_player(self, player_name: str, action_attempt: str):
+
+    self._print('Initializing player update.', 'light_magenta')
+
     prompt = interactive_document.InteractiveDocument(self._model)
+
+    self._print('Updating game master components.', 'light_magenta')
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
       executor.map(
@@ -181,12 +186,16 @@ class GameMaster(simulacrum_game_master.GameMaster):
           self._components.values(),
       )
 
+    self._print('Printing game master components.', 'light_magenta')
+
     for comp in self._components.values():
       state_of_component = comp.state()
       if state_of_component:
         prompt.statement(comp.name() + ': ' + state_of_component + '\n')
 
     prompt.statement(f"\n{player_name}'s attempted action: {action_attempt}")
+
+    self._print('Getting chain of thought.', 'light_magenta')
 
     # Produce the event that has happened as the result of the action attempt
     prompt, event_statement = thought_chains.run_chain_of_thought(
@@ -197,6 +206,8 @@ class GameMaster(simulacrum_game_master.GameMaster):
     )
 
     self._memory.add(event_statement)
+
+    self._print(f'Event statement from chain of thought: {event_statement}.', 'light_magenta')
 
     # This gives duplicates if direct_effect-like component is used
     if self._player_observes_event:
@@ -284,8 +295,16 @@ class GameMaster(simulacrum_game_master.GameMaster):
       player: basic_agent.BasicAgent,
       action_spec: simulacrum_agent.ActionSpec | None = None,
   ):
+    
+    self._print('Updating game master components', color="light_magenta")
+
     self.update_components()
+
+    self._print('Sending observations to the player...', color="light_magenta")
+
     self.view_for_player(player_name=player.name)
+
+    self._print()
 
     if action_spec:
       action_spec_this_time = action_spec
