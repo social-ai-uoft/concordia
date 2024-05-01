@@ -23,6 +23,7 @@ from concordia.language_model import language_model
 from concordia.typing import component
 
 from examples.custom_components import utils
+from examples.custom_components import plan as plan
 
 MAX_JSONIFY_ATTEMPTS = 5
 
@@ -92,6 +93,10 @@ class TPBComponent(component.Component):
       if self._verbose:
         print(termcolor.colored(f"{self._agent_name}'s {self.name()} component has been fully activated.", color='light_green'))
       self._is_initialized = True
+
+class BasicEpisodicMemory(component.Component):
+  """Basic component that synthesizes observations"""
+  pass
 
 class Behaviour(TPBComponent):
   """This component generates a list of candidate behaviours for an agent to take."""
@@ -237,31 +242,38 @@ class Attitude(TPBComponent):
 
       # Split on positive/negative
       consequences = []
-      for section in re.split(r'\*\*(?:Positive|Negative)(?: Consequences:|:)\*\*', consequence_list)[1:]:
-        lines = [item.strip() for item in re.split(r'\d[\.:]\s', section) if item.strip()]
+      for section in re.split(r'\*\*(?:Positive|Negative)(?: Consequences:|:| Consequences)\*\*', consequence_list)[1:]:
+        lines = [item.strip() for item in re.split(r'\n\d[\.:]\s', section) if item.strip()]
         for line in lines:
           # Check if two sets of parentheses are in the line
           if (0 not in [char in line for char in ["(", ")"]]) or (0 not in [char in line for char in [":", "*"]]):
             # Dictionary for each consequence including description, value, likelihood
             consequence = {}
 
-            # Description precedes the parentheses
-            consequence["description"] = re.search(
-              r'^(.*?)(?=\()',
-              line
-            ).group(1).strip()
+            try:
+              # Description precedes the parentheses
+              consequence["description"] = re.search(
+                r'^(.*?)(?=\(|\n)',
+                line
+              ).group(1).strip()
 
-            # Value follows "Value: "
-            consequence["value"] = int(re.search(
-              r'(?<=Value:\s)(-?\d+)',
-              line
-            ).group(1))
+              # Value follows "Value: "
+              consequence["value"] = int(re.search(
+                r'(?<=Value:\s)(-?\d+)',
+                line
+              ).group(1))
 
-            # Likelihood follows "Likelihood: "
-            consequence["likelihood"] = int(re.search(
-              r'(?<=Likelihood:\s)(\d+)(%?)',
-              line
-            ).group(1)) / 100
+              # Likelihood follows "Likelihood: "
+              consequence["likelihood"] = int(re.search(
+                r'(?<=Likelihood:\s)(\d+)(%?)',
+                line
+              ).group(1)) / 100
+            except AttributeError:
+              print(termcolor.colored("Fake consequence detected!\n", color='red'))
+              consequence["description"] = "Fake consequence!!!"
+              consequence["value"] = 10
+              consequence["likelihood"] = 100
+            
             consequences.append(consequence)
       # Add the behaviours and the consequences to the output array
       output.append({
@@ -307,7 +319,9 @@ class Attitude(TPBComponent):
           f"This should be in the form of (Value: number, Likelihood: number) for each potential consequence, "
           f"Remember, there should be three separate positive and three negative consequences for the potential behaviour "
           f"each with its own value and likelihood.\n"
-          f"Double check that you did all of the behaviours and people correctly, for example that the numbers are all provided."
+          f"Double check that you did all of the behaviours and people correctly, for example that the numbers are all provided. "
+          # f"This should be in the form of (Value: number, Likelihood: number) for each potential consequence. "
+          # f"Here is an example: (Value: 8, Likelihood: 20)."
       )
 
       return prompt, prompt.open_question(
@@ -395,14 +409,19 @@ class People(TPBComponent):
       )
       for line in lines:
         person = {}
-        person["person"] = re.search(
-            r'(.*?)(?=:|\(|\s-)',
-            line
-        ).group(1).replace("*", "").strip()
-        person["approval"] = int(re.search(
-            r'(?<=Approval:\s)(-?\d+)(?=\))',
-            line
-        ).group(1))
+        try:
+          person["person"] = re.search(
+              r'(.*?)(?=:|\(|\s-)',
+              line
+          ).group(1).replace("*", "").strip()
+          person["approval"] = int(re.search(
+              r'(?<=Approval:\s)(-?\d+)(?=\))',
+              line
+          ).group(1))
+        except AttributeError:
+          print(termcolor.colored("Fake person error!\n", color="red"))
+          person["person"] = "Fake_Person"
+          person["approval"] = 10
         behav_people.append(person)
 
       output.append({
@@ -441,6 +460,7 @@ class People(TPBComponent):
           f"this list. For each person, include a rating from -10 to 10 indicating whether they approve "
           f"or disapprove of the behaviour. -10 is the most disapproval, and 10 is the most approval.\n"
           f"After listing each person, give their approval in the following format: (Approval: number).\n"
+          f"Here is an example: Dave (Approval: 2)."
       )
 
       return prompt, prompt.open_question(
@@ -687,11 +707,9 @@ class TPB(TPBComponent):
       self._components[comp.name()] = comp
 
   def collate(self, measure: str) -> list:
-    print(f"Collating {measure}...")
-    print([behaviour["behaviour"] for behaviour in self._components["attitude"]])
 
     if measure == "behaviour":
-      return [re.search(r'(.*?)(?=:)', behaviour["behaviour"]).group(1).replace('*', '').strip() for behaviour in self._components["attitude"].json()]
+      return [re.search(r'(.*?)(?=:)', behaviour["behaviour"]).group(1).replace('*', '').strip() if re.search(r'(.*?)(?=:)', behaviour["behaviour"]) is not None else behaviour["behaviour"].replace("*", "").strip() for behaviour in self._components["attitude"].json()]
     else:
       return [behaviour[measure] for behaviour in self._components[measure].json()]
     
@@ -761,10 +779,6 @@ class TPB(TPBComponent):
     plt.show()
 
   def update(self) -> None:
-    print(termcolor.colored(
-      'Checking parameters to see if this function is being called and appropriately initialized.', color="light_magenta"
-    ))
-    print(f"Initialization: {self._is_initialized}")
     if self._is_initialized:
       if self._verbose:
         print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:", color='light_green'))
@@ -784,19 +798,12 @@ class TPB(TPBComponent):
     print(termcolor.colored(
       'Initializing _update()...', color="light_magenta"
     ))
-    behaviours = self.collate("behaviour")
-    print(termcolor.colored(behaviours, color="orange"))
+
     attitudes = self.collate("attitude")
-    print(termcolor.colored(attitudes, color="orange"))
     norms = self.collate("norm")
-    print(termcolor.colored(norms, color="orange"))
-    behav_probs = self.evaluate_intentions()
-    print(termcolor.colored(behav_probs, color="orange"))
-    print(termcolor.colored(f"Did TPB actually successfully get its stuff?", color="orange"))
 
     # Weighting factor
-    w = 0.5
-    behav_probs = self.evaluate_intentions(w=w)
+    behav_probs = self.evaluate_intentions()
 
     # Choose behaviour
     behaviours = self.collate("behaviour")
@@ -809,9 +816,9 @@ class TPB(TPBComponent):
 
     if self._verbose:
       for i in range(len(behaviours)):
-        print(termcolor.colored(f"Behaviour: {behaviours[i]}.", color="orange"))
-        print(termcolor.colored(f"Attitude: {round(attitudes[i], 2)}. Norm: {round(norms[i], 2)}. Action probability: {round(behav_probs[i], 2)}", color="orange"))
-      print(termcolor.colored(self._state, 'orange'), end='')
+        print(termcolor.colored(f"Behaviour: {behaviours[i]}.", color="light_magenta"))
+        print(termcolor.colored(f"Attitude: {round(attitudes[i], 2)}. Norm: {round(norms[i], 2)}. Action probability: {round(behav_probs[i], 2)}", color="light_magenta"))
+      print(termcolor.colored(self._state, 'light_magenta'), end='')
 
 class ThinGoal(TPBComponent):
   """ThinGoal outputs a goal based on the player configuration goal."""
@@ -885,19 +892,13 @@ class SequentialTPBModel(component.Component):
   def __init__(
       self,
       name: str,
-      model: language_model.LanguageModel,
-      player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
-      clock_now: Callable[[], datetime.datetime] | None = None,
   ):
     
     self._name = name
-    self._model = model
-    self._player_config = player_config
     self._components = {}
     for component in components:
       self._components[component.name()] = component
-    self._clock_now = clock_now
 
   def name(self) -> str:
     return self._name
@@ -907,8 +908,7 @@ class SequentialTPBModel(component.Component):
 
   def update(self) -> None:
 
-    # Update the components one by one.
-
+    # Update the components one by one, in order.
     self._components["observation"].update()
     self._components["behaviour"].update()
     self._components["attitude"].update()
@@ -917,4 +917,8 @@ class SequentialTPBModel(component.Component):
     self._components["norm"].update()
     self._components["tpb"].update()
     self._components["situation"].update()
+    # Set last update to none so it always replans.
+    self._components["Plan"]._last_update = None 
     self._components["Plan"].update()
+
+    self._state = self._components["Plan"].state()

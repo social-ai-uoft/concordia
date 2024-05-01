@@ -213,9 +213,6 @@ class BasicAgent(
       memorize: bool = False,
   ):
     
-    print(termcolor.colored(f'# # # # # # # # # # # # # # # # # # #', color='red'))
-    print(termcolor.colored(f'{self._agent_name} is currently taking an action!', color='red'))
-    print(termcolor.colored(f'# # # # # # # # # # # # # # # # # # #', color='red'))
     if not action_spec:
       action_spec = agent.DEFAULT_ACTION_SPEC
     self._maybe_update()

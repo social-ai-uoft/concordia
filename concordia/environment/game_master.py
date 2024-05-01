@@ -295,12 +295,8 @@ class GameMaster(simulacrum_game_master.GameMaster):
       player: basic_agent.BasicAgent,
       action_spec: simulacrum_agent.ActionSpec | None = None,
   ):
-    
-    self._print('Updating game master components', color="light_magenta")
 
     self.update_components()
-
-    self._print('Sending observations to the player...', color="light_magenta")
 
     self.view_for_player(player_name=player.name)
 
@@ -308,8 +304,6 @@ class GameMaster(simulacrum_game_master.GameMaster):
       action_spec_this_time = action_spec
     else:
       action_spec_this_time = self._action_spec
-
-    self._print('Preparing to act...', color="light_magenta")
 
     action = player.act(action_spec_this_time)
 
