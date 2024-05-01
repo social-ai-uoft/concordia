@@ -883,10 +883,38 @@ class SequentialTPBModel(component.Component):
   Explicit sequential model for the Theory of Planned Behaviour.
   """
   def __init__(
+      self,
       name: str,
       model: language_model.LanguageModel,
       player_config: formative_memories.AgentConfig,
-      commponents: Sequence[component.Component],
+      components: Sequence[component.Component],
       clock_now: Callable[[], datetime.datetime] | None = None,
   ):
-    pass
+    
+    self._name = name
+    self._model = model
+    self._player_config = player_config
+    self._components = {}
+    for component in components:
+      self._components[component.name()] = component
+    self._clock_now = clock_now
+
+  def name(self) -> str:
+    return self._name
+
+  def state(self) -> str:
+    return self._state
+
+  def update(self) -> None:
+
+    # Update the components one by one.
+
+    self._components["observation"].update()
+    self._components["behaviour"].update()
+    self._components["attitude"].update()
+    self._components["people"].update()
+    self._components["motivation"].update()
+    self._components["norm"].update()
+    self._components["tpb"].update()
+    self._components["situation"].update()
+    self._components["Plan"].update()
