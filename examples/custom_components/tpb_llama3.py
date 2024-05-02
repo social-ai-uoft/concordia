@@ -112,7 +112,7 @@ class BasicEpisodicMemory(TPBComponent):
       verbose: bool = False,
   ):
   
-    super().__init__(name="memory",model=model,memory=memory,player_config=player_config,clock_now=clock_now,num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    super().__init__(name="memory",model=model,memory=memory,player_config=player_config,clock_now=clock_now,num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose,memory_component=None)
     self._timeframe = timeframe
 
     # A dictionary inspired by SARSA containing the:
@@ -987,6 +987,7 @@ class SequentialTPBModel(component.Component):
     
     self._name = name
     self._components = {}
+    self._state = ''
     for component in components:
       self._components[component.name()] = component
 
