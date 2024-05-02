@@ -14,7 +14,6 @@ from typing import Callable, Sequence, Union
 from collections import defaultdict
 from retry import retry
 from scipy.stats import zscore
-from scipy.special import softmax
 
 from concordia.associative_memory import associative_memory
 from concordia.associative_memory import formative_memories
@@ -131,7 +130,10 @@ class BasicEpisodicMemory(TPBComponent):
   def observe(self, observation: str, wm_loc: str = "O2") -> None:
     """Take an observation and add it to the memory."""
     
-    self._working_memory[wm_loc] = observation
+    # Basic tag
+    tags = ['observation']
+
+    self._working_memory[wm_loc] = observation.strip()
 
     # If GM submits something, it is O2.
     # GM submits observations in the direct effect module.
@@ -139,45 +141,65 @@ class BasicEpisodicMemory(TPBComponent):
     # D after deliberation
     # A after action
     # O2 is moved to O after we get a new O2.
-    
+
+    # If there is a hyphen in the observation, add the "conversation tag."
+    if " -- " in observation:
+      tags.append('conversation')
+
     if wm_loc == "O2":
-      ltm_memory = (
-        f"Initial state: {self._working_memory['O']}\n"
-        f"Deliberation: {self._working_memory['D']}\n"
-        f"Plan: {self._working_memory['A']}\n"
-        f'Consequences: {self._working_memory["O2"]}\n'
-        # f'Reflections: {self._working_memory["R"]}\n' # TODO: Reflection?
-      )
+      # If the initial state, action, and plan are filled out, then build a SARSA memory:
+      if self._working_memory['O'] and self._working_memory['D'] and self._working_memory['A']:
+        ltm_memory = (
+          f"Initial state: {self._working_memory['O']}\n"
+          f"Deliberation: {self._working_memory['D']}\n"
+          f"Plan: {self._working_memory['A']}\n"
+          f'Consequences: {self._working_memory["O2"]}\n'
+          # f'Reflections: {self._working_memory["R"]}\n' # TODO: Reflection?
+        )
+      # Otherwise, just log a simple observation.
+      else:
+        ltm_memory = observation.strip()
       # Add the working memory to the LTM
-      tags = ['observation']
       importance = 1.
-      self._memory.add(f'[observation] {ltm_memory}', timestamp=self._clock_now(), tags=tags, importance=importance)
+      self._memory.add(f'[{", ".join(tags)}] {ltm_memory}', timestamp=self._clock_now(), tags=tags, importance=importance)
       # Move the resulting observation into the initial observation for the next state
       self._working_memory = {"O": f'{self._working_memory["O2"]}',"D": "","A": "","O2": ""}
 
 
-  def summarize(self) -> str:
-    """Summarize the agent's memory in the past timeframe."""
-
-    mems = '\n'.join(
-        self._memory.retrieve_recent(
-            self._num_memories_to_retrieve, add_time=True
-        )
-    )
+  def summarize(self, observations: list[str], kind: str = "deliberations") -> str:
+    """Summarize the agent's internal deliberations."""
 
     prompt = interactive_document.InteractiveDocument(self._model)
-    prompt.statement(f"Memories of {self._agent_name}:\n{mems}")
+    
+    observations = observations
 
-    question = (
-      f"Given the memories provided, provide a summary of what has happened to "
-      f"{self._agent_name} in the last {utils.format_timedelta(self._timeframe)}. "
+    prompt.statement(
+        f"{kind.capitalize()} of {self._agent_name}: {observations}"
     )
 
+    if kind == "deliberations":
+      question = (
+        f"Given the above, write a one-sentence summary of the behaviours and their most "
+        f"relevant potential consequences for {self._agent_name} and other people that "
+        f"{self._agent_name} considered taking when {utils.pronoun(self._config)} was "
+        f"making {utils.pronoun(self._config, case = 'genitive')} decision. "
+      )
+    elif kind == "plan":
+      question = (
+        f"Restate {self._agent_name}'s plan in a single sentence. If the {kind} includes "
+        f"dialogue, make sure to include the name of the person who is talking."
+      )
+    else:
+      question = (
+        f"Restate the {kind} in a single sentence. If the {kind} includes dialogue, make "
+        f"sure to include the name of the person who is talking."
+      )
+
     summary = prompt.open_question(
-      question,
-      max_tokens=1000,
-      max_characters=1200,
-      terminators=()
+        question,
+        max_tokens=1000,
+        max_characters=1200,
+        terminators=()
     )
 
     return summary
@@ -339,7 +361,7 @@ class Attitude(TPBComponent):
             try:
               # Description precedes the parentheses
               consequence["description"] = re.search(
-                r'^(.*?)(?=\(|\n)',
+                r'^(.*?)(?=\(|\n|Value:)',
                 line
               ).group(1).strip()
 
@@ -356,6 +378,7 @@ class Attitude(TPBComponent):
               ).group(1)) / 100
             except AttributeError:
               print(termcolor.colored("Fake consequence detected!\n", color='red'))
+              print(termcolor.colored(f"{line}\n", color='red'))
               consequence["description"] = "Fake consequence!!!"
               consequence["value"] = 10
               consequence["likelihood"] = 100
@@ -406,8 +429,8 @@ class Attitude(TPBComponent):
           f"Remember, there should be three separate positive and three negative consequences for the potential behaviour "
           f"each with its own value and likelihood.\n"
           f"Double check that you did all of the behaviours and people correctly, for example that the numbers are all provided. "
-          # f"This should be in the form of (Value: number, Likelihood: number) for each potential consequence. "
-          # f"Here is an example: (Value: 8, Likelihood: 20)."
+          f"This should be in the form of (Value: number, Likelihood: number) for each potential consequence. "
+          f"Here is an example: (Value: 8, Likelihood: 20)."
       )
 
       return prompt, prompt.open_question(
@@ -761,6 +784,7 @@ class TPB(TPBComponent):
       components: Sequence[TPBComponent],
       memory_component: component.Component | None = None,
       w: float = 0.5,
+      tau: float = 1.5,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -774,6 +798,7 @@ class TPB(TPBComponent):
       player_config: An AgentConfig object containing details about the agent.
       components: A sequence including a Behaviour component.
       w: The weight parameter. Default is 0.5 (equal weight given to attitudes and subjective norms). 
+      tau: The inverse temperature parameter for the softmax function. Default is 1.5.
       A higher value indicates more weight towards attitudes, lower indicates more weight towards subjective norms.
       clock_now: time callback to use for the state.
       num_memories_to_retrieve: Number of memories to retrieve.
@@ -784,7 +809,9 @@ class TPB(TPBComponent):
     super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
 
+
     self._w = w
+    self._softmax = lambda x : utils.softmax(x, tau)
     self._components = {}
     for comp in components:
       self.add_component(comp)
@@ -814,8 +841,36 @@ class TPB(TPBComponent):
     # Weigh the two values
     behavioural_intentions = (w * attitudes) + ((1 - w) * norms)
     # Compute softmax
-    behav_probs = softmax(behavioural_intentions)
+    behav_probs = self._softmax(behavioural_intentions)
     return behav_probs
+  
+  def stringify(self) -> str:
+    """Return a string containing behaviour, consequences, and subjective norms for each behaviour."""
+
+    output = ""
+
+    for i in range(len(self._components["attitude"].json())):
+      behaviour = self._components["attitude"].json()[i]["behaviour"]
+      consequences = [c["description"] for c in self._components["attitude"].json()[i]["consequences"]]
+      values = [c["value"] for c in self._components["attitude"].json()[i]["consequences"]]
+      likelihoods = [c["likelihood"] for c in self._components["attitude"].json()[i]["consequences"]]
+      people = [c["person"] for c in self._components["norm"].json()[i]["people"]]
+      approvals = [c["approval"] for c in self._components["norm"].json()[i]["people"]]
+      motivations = [c["motivation"] for c in self._components["norm"].json()[i]["people"]]
+
+      output += f"Possible Behaviour: {behaviour}\n\n"
+      output += f"Potential Consequences:\n"
+      output += f"\n".join([
+        f"{i+1}. {consequences[i]} (Value: {values[i]}, Likelihood: {likelihoods[i] * 100})%" for i in range(len(consequences))
+      ])
+      output += f"\n\n"
+      output += f"Others:\n"
+      output += f"\n".join([
+        f"{i+1}. {people[i]} (Approval of behaviour: {approvals[i]}, {self._agent_name}'s motivation to consider their views: {motivations[i] * 100})%" for i in range(len(people))
+      ])
+      output += "\n\n"
+
+    return output
   
   def evaluate_probability_of_behaviour(self, behaviour: int | str) -> float:
     """Compute the probability of a behaviour.
@@ -831,7 +886,7 @@ class TPB(TPBComponent):
     
     return self.evaluate_intentions()[index]
   
-  def plot(self, file_path: Union[str, os.PathLike] | None = None) -> None:
+  def plot(self, file_path: str | os.PathLike | None = None) -> None:
     """Plot the outputs.
     
     Args:
@@ -851,8 +906,8 @@ class TPB(TPBComponent):
 
     plt.figure(figsize=(8,8))
 
-    plt.barh(b3, softmax(attitudes), height = bw, color = 'darkgreen', label = 'Attitudes')
-    plt.barh(b2, softmax(norms), height = bw, color = 'limegreen', label = 'Subjective Norms')
+    plt.barh(b3, self._softmax(attitudes), height = bw, color = 'darkgreen', label = 'Attitudes')
+    plt.barh(b2, self._softmax(norms), height = bw, color = 'limegreen', label = 'Subjective Norms')
     plt.barh(b1, behav_probs, height = bw, color = 'forestgreen', label = 'Behavioural Intentions')
 
     plt.ylabel('Behaviours')
@@ -871,23 +926,16 @@ class TPB(TPBComponent):
   def update(self) -> None:
     if self._is_initialized:
       if self._verbose:
-        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:", color='light_green'))
+        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:\n", color='light_green'))
       self._update()
     else:
       if self._verbose:
         print(termcolor.colored(f"{self._agent_name}'s {self.name()} component has been fully activated.", color='light_green'))
       self._is_initialized = True
-      print(termcolor.colored(
-      'Using the thin goal...', color="light_magenta"
-      ))
       self._components["thin_goal"].update()
       self._state = self._components["thin_goal"].state()
 
   def _update(self) -> None:
-
-    print(termcolor.colored(
-      'Initializing _update()...', color="light_magenta"
-    ))
 
     attitudes = self.collate("attitude")
     norms = self.collate("norm")
@@ -908,7 +956,7 @@ class TPB(TPBComponent):
       for i in range(len(behaviours)):
         print(termcolor.colored(f"Behaviour: {behaviours[i]}.", color="light_magenta"))
         print(termcolor.colored(f"Attitude: {round(attitudes[i], 2)}. Norm: {round(norms[i], 2)}. Action probability: {round(behav_probs[i], 2)}", color="light_magenta"))
-      print(termcolor.colored(self._state, 'light_magenta'), end='')
+      print(termcolor.colored(self._state, 'light_magenta'), end='\n')
 
 class ThinGoal(TPBComponent):
   """ThinGoal outputs a goal based on the player configuration goal."""
@@ -983,11 +1031,13 @@ class SequentialTPBModel(component.Component):
       self,
       name: str,
       components: Sequence[component.Component],
+      verbose: bool = False
   ):
     
     self._name = name
     self._components = {}
     self._state = ''
+    self._verbose = verbose
     for component in components:
       self._components[component.name()] = component
 
@@ -1003,6 +1053,8 @@ class SequentialTPBModel(component.Component):
   def update(self) -> None:
 
     # Update the components one by one, in order.
+    if self._verbose:
+      print(termcolor.colored("\n".join(self._components['memory']._memory.retrieve_recent(k=100)), color="green"))
 
     # First, the TPB components...
     self._components["behaviour"].update()
@@ -1010,20 +1062,24 @@ class SequentialTPBModel(component.Component):
     self._components["people"].update()
     self._components["motivation"].update()
     self._components["norm"].update()
+    self._components["tpb"].update()
 
-    # Store the deliberation summaries from all of the TPB components...
-    deliberation = self._components["observation"].summarize({
-      "behaviour", "attitude", "norm"
-    })
+    # Store the deliberation summary from all of the TPB components...
+    deliberation = self._components["memory"].summarize(
+      self._components["tpb"].stringify()
+    )
     # and then put them into the working memory as the D component
     self._components["memory"].observe(deliberation, wm_loc = "D")
 
     # After deliberations are complete, synthesize the TPB model into the plan
-    self._components["tpb"].update()
     self._components["situation"].update()
     self._components["Plan"]._last_update = None # Set last update to none so it always replans.
     self._components["Plan"].update()
     self._state = self._components["Plan"].state()
+
+    plan = self._components["memory"].summarize(
+      self._state, kind = "plan"
+    )
     
     # Add the plan as the A component of the working memory
-    self._components["memory"].observe(self._state, wm_loc = "A")
+    self._components["memory"].observe(plan, wm_loc = "A")

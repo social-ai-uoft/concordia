@@ -115,7 +115,10 @@ class DirectEffect(component.Component):
               + 'perspective using third-person limited point of view. '
               + 'If the event contains a direct quotation of anything said '
               + 'or written by anyone then it is important to include the '
-              + 'quote verbatim in the summary.',
+              + 'quote verbatim in the summary. '
+              + 'Do not restate the fact that you are summarizing the event, '
+              + f"just provide the summary of the event from {player_name}'s "
+              + "perspective using third-person limited point of view.",
               max_characters=3000,
               max_tokens=2500,
           )

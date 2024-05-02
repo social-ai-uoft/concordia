@@ -2,7 +2,8 @@ import os
 import pickle
 import datetime
 
-from typing import Union
+import numpy as np
+from numpy.typing import ArrayLike
 
 from concordia.agents import basic_agent
 from concordia.associative_memory import formative_memories, associative_memory, blank_memories
@@ -83,14 +84,23 @@ def format_timedelta(time_delta: datetime.timedelta, unit: str = None) -> str:
   
   return f"{output_val} {unit_str}"
 
-def save_memories(mem: associative_memory.AssociativeMemory, file_path: Union[str, os.PathLike]) -> None:
+def softmax(x: ArrayLike, tau: float):
+  """Returns a softmax probability distribution.
+  
+  Args:
+    x: An `np.ndarray`, or `ArrayLike` object that supports conversion into a `np.ndarray`.
+    tau: The inverse temperature. Higher inverse temperatures result in more deterministic choices."""
+  x = np.asarray(x) if not isinstance(x, np.ndarray) else x
+  return np.exp(tau*x) / sum(np.exp(tau*x))
+
+def save_memories(mem: associative_memory.AssociativeMemory, file_path: str | os.PathLike) -> None:
 
   with open(file_path, 'wb') as path:
     pickle.dump({
       'data': mem.get_data_frame()
     }, path)
 
-def load_memories(mem: associative_memory.AssociativeMemory, file_path: Union[str, os.PathLike]) -> associative_memory.AssociativeMemory:
+def load_memories(mem: associative_memory.AssociativeMemory, file_path: str | os.PathLike) -> associative_memory.AssociativeMemory:
 
   with open(file_path, 'rb') as path:
     memory_bank = pickle.load(path)['data']

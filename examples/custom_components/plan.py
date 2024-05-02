@@ -55,7 +55,7 @@ class SimPlan(component.Component):
         for the planning chain of thought
       timescale: string describing how long the plan should last
       time_adverb: string describing the rate of steps in the plan
-      verbose: whether or not to print intermediate reasoning steps
+      verbose: whether or not to print intermediate reasoning stepst
       log_color: color for debug logging
     """
     self._model = model
@@ -117,6 +117,7 @@ class SimPlan(component.Component):
           use_recency=True,
           add_time=True,
       )
+      
     memories = '\n'.join(memories)
 
     components = '\n'.join([
@@ -132,7 +133,6 @@ class SimPlan(component.Component):
     prompt.statement(f'{components}\n')
     prompt.statement(f'Relevant memories:\n{memories}')
     if self._goal_component:
-      print(termcolor.colored(f'Current goal: {self._goal_component.state()}.', color="light_magenta"))
       prompt.statement(f'Current goal: {self._goal_component.state()}.')
     prompt.statement(f'Current situation: {observation}')
 
