@@ -24,6 +24,9 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from typing_extensions import override
 
+import requests
+import json
+
 MAX_MULTIPLE_CHOICE_ATTEMPTS = 5
 MAX_SAMPLE_TEXT_ATTEMPTS = 5
 
@@ -64,14 +67,8 @@ class OllamaLanguageModel(language_model.LanguageModel):
     self._terminators = kwargs['terminators'] if 'terminators' in kwargs else []
     if "llama3" in self._model_name and len(self._terminators) == 0:
       self._terminators.extend(['<|eot_id|>'])
-    if streaming:
-      self._client = Ollama(
-        model=model_name,
-        stop = self._terminators,
-        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
-      )
-    else:
-      self._client = Ollama(model=model_name, stop=self._terminators)
+    
+    self.url = 'http://localhost:11434/api/generate'
 
   @override
   def sample_text(
@@ -84,21 +81,57 @@ class OllamaLanguageModel(language_model.LanguageModel):
       temperature: float = language_model.DEFAULT_TEMPERATURE,
       timeout: float = language_model.DEFAULT_TIMEOUT_SECONDS,
       seed: int | None = None,
+      logits: bool = False,
+      query_tokens: list | None = None,
   ) -> str:
     prompt_with_system_message = f"{self._system_message}\n\n{prompt}"
-
+  
     terminators = self._terminators.extend(terminators) if terminators is not None else self._terminators
 
-    response = self._client(
-        prompt_with_system_message,
-        stop=terminators,
-        temperature=temperature,
-    )
+    data = {
+        "model": self._model_name,
+        "prompt": prompt_with_system_message,
+        "options": {
+          "n_probs": 50,
+          "num_predict": 2
+        }
+    }
+
+    data_json = json.dumps(data)
+
+    json_response = requests.post(self.url, data=data_json)
+    json_iter = json_response.iter_lines()
+
+    response = ''
+    probs = {}
+
+    if json_response.status_code == 200:
+      answer_line = next(json_iter)
+      answer_json = json.loads(answer_line.decode('utf-8'))
+      if 'error' in answer_json:
+        response = 'Error: ' + answer_json['error']
+      else:
+        response = answer_json['response']
+        if logits:
+          prob_line = next(json_iter)
+          prob_json = json.loads(prob_line.decode('utf-8'))
+          probabilities = prob_json['completion_probabilities'][0]['probs']
+
+          if query_tokens is not None:
+            for token in query_tokens:
+              for prob in probabilities:
+                if prob['tok_str'] == token:
+                  probs[token] = prob['prob']
+                  break
+    else:
+      response = 'Error: ' + str(json_response.status_code)
 
     if self._measurements is not None:
       self._measurements.publish_datum(
           self._channel, {"raw_text_length": len(response)}
       )
+    if logits:
+      return response, probs
     return response
 
   @override
@@ -130,3 +163,5 @@ class OllamaLanguageModel(language_model.LanguageModel):
       self._measurements.publish_datum(self._channel, {"choices_calls": 1})
     debug = {}
     return idx, responses[idx], debug
+
+
