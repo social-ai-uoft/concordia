@@ -115,11 +115,46 @@ class BasicEpisodicMemory(TPBComponent):
     super().__init__(name="memory",model=model,memory=memory,player_config=player_config,clock_now=clock_now,num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
     self._timeframe = timeframe
 
-  def observe(self, observation: str, *, tags: list[str] = None, importance: float = None) -> None:
+    # A dictionary inspired by SARSA containing the:
+    # - Observation of preceding event by agent
+    # - Deliberation/Cognition of agent
+    # - Action of agent
+    # - Observation of consequences/resulting event.
+    self._working_memory = {
+      "O": "",
+      "D": "",
+      "A": "",
+      "O2": "",
+      "R": ""
+    }
+
+  def observe(self, observation: str, wm_loc: str = "O2") -> None:
     """Take an observation and add it to the memory."""
-    tags = ['observation'] if tags is None else tags
-    importance = 1. if importance is None else importance
-    self._memory.add(f'[observation] {observation}', timestamp=self._clock_now(), tags=tags, importance=importance)
+    
+    self._working_memory[wm_loc] = observation
+
+    # If GM submits something, it is O2.
+    # GM submits observations in the direct effect module.
+    # We submit observations in the SequentialTPBModel: 
+    # D after deliberation
+    # A after action
+    # O2 is moved to O after we get a new O2.
+    
+    if wm_loc == "O2":
+      ltm_memory = (
+        f"Initial state: {self._working_memory['O']}\n"
+        f"Deliberation: {self._working_memory['D']}\n"
+        f"Plan: {self._working_memory['A']}\n"
+        f'Consequences: {self._working_memory["O2"]}\n'
+        # f'Reflections: {self._working_memory["R"]}\n' # TODO: Reflection?
+      )
+      # Add the working memory to the LTM
+      tags = ['observation']
+      importance = 1.
+      self._memory.add(f'[observation] {ltm_memory}', timestamp=self._clock_now(), tags=tags, importance=importance)
+      # Move the resulting observation into the initial observation for the next state
+      self._working_memory = {"O": f'{self._working_memory["O2"]}',"D": "","A": "","O2": ""}
+
 
   def summarize(self) -> str:
     """Summarize the agent's memory in the past timeframe."""
@@ -961,19 +996,33 @@ class SequentialTPBModel(component.Component):
   def state(self) -> str:
     return self._state
 
+  def observe(self, observation: str) -> None:
+    self._components["memory"].observe(observation)
+
   def update(self) -> None:
 
     # Update the components one by one, in order.
-    self._components["observation"].update()
+
+    # First, the TPB components...
     self._components["behaviour"].update()
     self._components["attitude"].update()
     self._components["people"].update()
     self._components["motivation"].update()
     self._components["norm"].update()
+
+    # Store the deliberation summaries from all of the TPB components...
+    deliberation = self._components["observation"].summarize({
+      "behaviour", "attitude", "norm"
+    })
+    # and then put them into the working memory as the D component
+    self._components["memory"].observe(deliberation, wm_loc = "D")
+
+    # After deliberations are complete, synthesize the TPB model into the plan
     self._components["tpb"].update()
     self._components["situation"].update()
-    # Set last update to none so it always replans.
-    self._components["Plan"]._last_update = None 
+    self._components["Plan"]._last_update = None # Set last update to none so it always replans.
     self._components["Plan"].update()
-
     self._state = self._components["Plan"].state()
+    
+    # Add the plan as the A component of the working memory
+    self._components["memory"].observe(self._state, wm_loc = "A")
