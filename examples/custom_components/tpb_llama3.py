@@ -36,6 +36,7 @@ class TPBComponent(component.Component):
       model: language_model.LanguageModel,
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
+      memory_component: component.Component | None,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -67,6 +68,8 @@ class TPBComponent(component.Component):
     self._name = name
     self._json = []
     self._is_initialized = False
+    self._has_memory_component = memory_component is not None
+    self._memory_component = memory_component
     
   def name(self) -> str:
     return self._name
@@ -89,14 +92,60 @@ class TPBComponent(component.Component):
       if self._verbose:
         print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:", color='light_green'))
       self._update()
+      if self._state and self._has_memory_component:
+        self._memory_component.observe(self._state)
     else:
       if self._verbose:
         print(termcolor.colored(f"{self._agent_name}'s {self.name()} component has been fully activated.", color='light_green'))
       self._is_initialized = True
 
-class BasicEpisodicMemory(component.Component):
+class BasicEpisodicMemory(TPBComponent):
   """Basic component that synthesizes observations"""
-  pass
+  def __init__(
+      self,
+      model: language_model.LanguageModel,
+      memory: associative_memory.AssociativeMemory,
+      player_config: formative_memories.AgentConfig,
+      clock_now: Callable[[], datetime.datetime] | None = None,
+      timeframe: datetime.timedelta = datetime.timedelta(hours=1),
+      num_memories_to_retrieve: int = 100,
+      verbose: bool = False,
+  ):
+  
+    super().__init__(name="memory",model=model,memory=memory,player_config=player_config,clock_now=clock_now,num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    self._timeframe = timeframe
+
+  def observe(self, observation: str, *, tags: list[str] = None, importance: float = None) -> None:
+    """Take an observation and add it to the memory."""
+    tags = ['observation'] if tags is None else tags
+    importance = 1. if importance is None else importance
+    self._memory.add(f'[observation] {observation}', timestamp=self._clock_now(), tags=tags, importance=importance)
+
+  def summarize(self) -> str:
+    """Summarize the agent's memory in the past timeframe."""
+
+    mems = '\n'.join(
+        self._memory.retrieve_recent(
+            self._num_memories_to_retrieve, add_time=True
+        )
+    )
+
+    prompt = interactive_document.InteractiveDocument(self._model)
+    prompt.statement(f"Memories of {self._agent_name}:\n{mems}")
+
+    question = (
+      f"Given the memories provided, provide a summary of what has happened to "
+      f"{self._agent_name} in the last {utils.format_timedelta(self._timeframe)}. "
+    )
+
+    summary = prompt.open_question(
+      question,
+      max_tokens=1000,
+      max_characters=1200,
+      terminators=()
+    )
+
+    return summary
 
 class Behaviour(TPBComponent):
   """This component generates a list of candidate behaviours for an agent to take."""
@@ -108,6 +157,7 @@ class Behaviour(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       num_behavs: int = 5,
+      memory_component: component.Component | None = None,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -126,7 +176,7 @@ class Behaviour(TPBComponent):
     """
 
     # Initialize superclass
-    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
     
     self._num_behavs = num_behavs
@@ -193,6 +243,7 @@ class Attitude(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+      memory_component: component.Component | None = None,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -210,7 +261,7 @@ class Attitude(TPBComponent):
     """
 
     # Initialize superclass
-    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
     
     self._components = components
@@ -360,6 +411,7 @@ class People(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+      memory_component: component.Component | None = None,
       num_people: int = 5,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
@@ -380,7 +432,7 @@ class People(TPBComponent):
     """
 
     # Initialize superclass
-    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
     
     self._num_people = num_people
@@ -499,6 +551,7 @@ class Motivation(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+      memory_component: component.Component | None = None,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -517,7 +570,7 @@ class Motivation(TPBComponent):
     """
 
     # Initialize superclass
-    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
     
     self._components = components
@@ -618,6 +671,7 @@ class SubjectiveNorm(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+      memory_component: component.Component | None = None,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -636,7 +690,7 @@ class SubjectiveNorm(TPBComponent):
     """
 
     # Initialize superclass
-    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
     
     self._components = components
@@ -670,6 +724,7 @@ class TPB(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[TPBComponent],
+      memory_component: component.Component | None = None,
       w: float = 0.5,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
@@ -691,7 +746,7 @@ class TPB(TPBComponent):
     """
 
     # Initialize superclass
-    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
 
     self._w = w
