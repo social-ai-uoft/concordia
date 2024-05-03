@@ -27,6 +27,11 @@ from typing_extensions import override
 MAX_MULTIPLE_CHOICE_ATTEMPTS = 5
 MAX_SAMPLE_TEXT_ATTEMPTS = 5
 
+SYSTEM_MESSAGE = (
+  'Continue the user\'s sentences. Never repeat their starts. For example, when you see '
+  '\'Bob is\', you should continue the sentence after the word \'is\'.'
+)
+
 def _extract_choices(text):
   match = re.search(r"\(?(\w)\)", text)
   if match:
@@ -68,6 +73,7 @@ class OllamaLanguageModel(language_model.LanguageModel):
       self._client = Ollama(
         model=model_name,
         stop = self._terminators,
+        system=SYSTEM_MESSAGE,
         callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
       )
     else:
@@ -130,3 +136,4 @@ class OllamaLanguageModel(language_model.LanguageModel):
       self._measurements.publish_datum(self._channel, {"choices_calls": 1})
     debug = {}
     return idx, responses[idx], debug
+

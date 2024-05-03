@@ -91,7 +91,10 @@ class PlayerStatus(component.Component):
           prompt.open_question(
               'Given the above events and their time, what is the latest'
               f' location of {player_name} and what are they doing?',
-              answer_prefix=f'{player_name} is ',
+              f' Answer from the perspective of a neutral observer.'
+              f' Provide only the latest location of {player_name} and'
+              f' what they are doing.'
+              # answer_prefix=f'{player_name} is ',
           )
           + '\n'
       )

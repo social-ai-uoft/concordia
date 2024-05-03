@@ -530,6 +530,7 @@ class People(TPBComponent):
           ).group(1))
         except AttributeError:
           print(termcolor.colored("Fake person error!\n", color="red"))
+          print(termcolor.colored(f"{line}\n", color='red'))
           person["person"] = "Fake_Person"
           person["approval"] = 10
         behav_people.append(person)
@@ -1054,7 +1055,7 @@ class SequentialTPBModel(component.Component):
 
     # Update the components one by one, in order.
     if self._verbose:
-      print(termcolor.colored("\n".join(self._components['memory']._memory.retrieve_recent(k=100)), color="green"))
+      print(termcolor.colored("\n".join(self._components['memory']._memory.retrieve_recent(k=5)), color="light_magenta"))
 
     # First, the TPB components...
     self._components["behaviour"].update()
