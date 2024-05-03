@@ -31,6 +31,12 @@ from concordia.document import interactive_document
 from concordia.language_model import language_model
 from concordia.typing import component
 
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+from examples.custom_components import utils
+from examples.tpb import plan
+from examples.tpb import memory
+>>>>>>> Stashed changes:examples/tpb/tpb.py
 
 MAX_JSONIFY_ATTEMPTS = 5
 
@@ -43,6 +49,10 @@ class TPBComponent(component.Component):
       model: language_model.LanguageModel,
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+      memory_component: memory.DialogueMemory | None = None,
+>>>>>>> Stashed changes:examples/tpb/tpb.py
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -86,6 +96,24 @@ class TPBComponent(component.Component):
     """Take the output of the LLM and reformat it into a JSON array."""
     pass
 
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+  def _update(self) -> None:
+    pass
+
+  def update(self) -> None:
+    if self._is_initialized:
+      if self._verbose:
+        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component update:", color='light_green'))
+      self._update()
+      if self._state and self._has_memory_component:
+        self._memory_component.observe(self._state)
+    else:
+      if self._verbose:
+        print(termcolor.colored(f"{self._agent_name}'s {self.name()} component has been fully activated.", color='light_green'))
+      self._is_initialized = True
+
+>>>>>>> Stashed changes:examples/tpb/tpb.py
 class Behaviour(TPBComponent):
   """This component generates a list of candidate behaviours for an agent to take."""
 
@@ -96,6 +124,10 @@ class Behaviour(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       num_behavs: int = 5,
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+      memory_component: memory.DialogueMemory | None = None,
+>>>>>>> Stashed changes:examples/tpb/tpb.py
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -171,6 +203,92 @@ class Behaviour(TPBComponent):
     if self._verbose:
       print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
 
+class SpeechBehaviour(Behaviour):
+  """This component generates a list of responses an agent can make"""
+  def __init__(
+      self,
+      name: str,
+      model: language_model.LanguageModel,
+      memory: associative_memory.AssociativeMemory,
+      player_config: formative_memories.AgentConfig,
+      num_behavs: int = 5,
+      memory_component: memory.DialogueMemory | None = None,
+      clock_now: Callable[[], datetime.datetime] | None = None,
+      num_memories_to_retrieve: int = 100,
+      verbose: bool = False,
+  ):
+    """Initializes the Behaviour component.
+
+    Args:
+      name: Name of the component.
+      model: Language model.
+      memory: Associative memory.
+      player_config: An AgentConfig object containing details about the agent.
+      num_behavs: The number of behaviours to generate.
+      clock_now: time callback to use for the state.
+      num_memories_to_retrieve: Number of memories to retrieve.
+      verbose: Whether to print the state.
+    """
+
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,num_behavs=num_behavs,
+                     memory_component=memory_component,num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    
+
+  def jsonify(self) -> list:
+
+    behaviour_list = []
+    # Split on each digit
+    lines = re.split(r'\d[\.:]\s?', self._state)
+    # Make sure this has returned a numbered list, or throw an assertion error
+    assert len(lines) > 1, "LLM did not generate a numbered list of behaviours."
+    # Add the behaviour to the line.
+    for line in lines[1:]:
+      item = {}
+      item['behaviour'] = line.strip()
+      behaviour_list.append(item)
+    return behaviour_list
+      
+  @retry(AssertionError, tries = 5)
+  def _update(self) -> None:
+
+    # Conversation
+    mems = '\n'.join(
+        self._memory_component.retrieve_conversation()
+    )
+
+    prompt = interactive_document.InteractiveDocument(self._model)
+
+    if self._clock_now is not None:
+      prompt.statement(f"Current time: {self._clock_now()}.\n")
+
+    prompt.statement(f"Traits of {self._agent_name}: {self._traits}")
+    prompt.statement(f"Goals of {self._agent_name}: {self._goal}")
+
+    prompt.statement(f"Ongoing conversation:\n{mems}")
+
+    question = (
+        f"Instructions: \n"
+        f"Given the conservation above, generate a list of {self._num_behavs} potential "
+        f"responses above that {self._agent_name} can make in response to the situation. "
+        f"Consider a variety of different possible responses to the situation; "
+        f"Do not simply suggest ways of restating the same thing multiple times."
+        f"Return the list of responses as a numbered list from 1 to {self._num_behavs}."
+    )
+
+    self._state = prompt.open_question(
+      question,
+      max_characters=5000,
+      max_tokens=3000
+    )
+    
+    self._json = self.jsonify()
+
+    self._last_chain = prompt
+
+    if self._verbose:
+      print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
 class Attitude(TPBComponent):
   """This component generates a personal attitude towards a given behaviour."""
 
@@ -181,6 +299,10 @@ class Attitude(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+      memory_component: memory.DialogueMemory | None = None,
+>>>>>>> Stashed changes:examples/tpb/tpb.py
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -202,6 +324,7 @@ class Attitude(TPBComponent):
                      num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
     
     self._components = components
+    self._dialogue_memory = memory_component
 
   def eval_attitude(self, consequences: list[dict]) -> int:
     """Generate a global attitude for a behaviour given a list of consequences.
@@ -220,7 +343,10 @@ class Attitude(TPBComponent):
       self._state
     )
     # Get all behaviours from the list
-    behaviour_list = self._components[0].json()
+    if self._memory_component.in_conversation():
+      behaviour_list = self._components[1].json()
+    else:
+      behaviour_list = self._components[0].json()
     # Create output array
     output = []
 
@@ -269,8 +395,10 @@ class Attitude(TPBComponent):
             self._num_memories_to_retrieve, add_time=True
         )
     )
-
-    behavs = [item['behaviour'] for item in self._components[0].json()]
+    if self._memory_component.in_conversation():
+      behavs = [item['behaviour'] for item in self._components[1].json()]
+    else:
+      behavs = [item['behaviour'] for item in self._components[0].json()]
 
     def question(behav):
       prompt = interactive_document.InteractiveDocument(self._model)
@@ -337,6 +465,10 @@ class People(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+      memory_component: memory.DialogueMemory | None = None,
+>>>>>>> Stashed changes:examples/tpb/tpb.py
       num_people: int = 5,
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
@@ -371,7 +503,10 @@ class People(TPBComponent):
       self._state
     )
     # Get all behaviours from the list
-    behaviour_list = self._components[0].json()
+    if self._memory_component.in_conversation():
+      behaviour_list = self._components[1].json()
+    else:
+      behaviour_list = self._components[0].json()
     # Create output array
     output = []
 
@@ -408,8 +543,11 @@ class People(TPBComponent):
             self._num_memories_to_retrieve, add_time=True
         )
     )
-
-    behavs = [item['behaviour'] for item in self._components[0].json()]
+    
+    if self._memory_component.in_conversation():
+      behavs = [item['behaviour'] for item in self._components[1].json()]
+    else:
+      behavs = [item['behaviour'] for item in self._components[0].json()]
 
     def question(behav):
       prompt = interactive_document.InteractiveDocument(self._model)
@@ -468,6 +606,10 @@ class Motivation(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+      memory_component: memory.DialogueMemory | None = None,
+>>>>>>> Stashed changes:examples/tpb/tpb.py
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -586,6 +728,10 @@ class SubjectiveNorm(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[component.Component],
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+      memory_component: memory.DialogueMemory | None = None,
+>>>>>>> Stashed changes:examples/tpb/tpb.py
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -638,6 +784,12 @@ class TPB(TPBComponent):
       memory: associative_memory.AssociativeMemory,
       player_config: formative_memories.AgentConfig,
       components: Sequence[TPBComponent],
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
+=======
+      memory_component: memory.DialogueMemory | None = None,
+      w: float = 0.5,
+      tau: float = 1.5,
+>>>>>>> Stashed changes:examples/tpb/tpb.py
       clock_now: Callable[[], datetime.datetime] | None = None,
       num_memories_to_retrieve: int = 100,
       verbose: bool = False,
@@ -674,9 +826,103 @@ class TPB(TPBComponent):
       if component.name == ["attitude", "norm"]:
         self._jsons.append(component.json())
 
+<<<<<<< Updated upstream:examples/custom_components/tpb_llama3.py
     for _json in self._jsons:
       temp = defaultdict(set)
       for i in range(len(_json)):
         for k, v in _json[i].items():
           temp[k].add(v)
       self._json.append(temp)
+=======
+    if self._clock_now is not None:
+      prompt.statement(f"Current time: {self._clock_now()}.\n")
+
+    prompt.statement(f"Traits of {self._agent_name}: {self._traits}")
+    prompt.statement(f"Goals of {self._agent_name}: {self._goal}")
+
+    question = (
+        f"Instructions: \n"
+        f"Given the memories above, restate {self._agent_name}'s goal in one sentence."
+    )
+
+    self._state = prompt.open_question(
+      question,
+      max_characters=5000,
+      max_tokens=3000
+    )
+    
+    self._json = self.jsonify()
+
+    self._last_chain = prompt
+
+    if self._verbose:
+      print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
+
+class SequentialTPBModel(component.Component):
+  """
+  Explicit sequential model for the Theory of Planned Behaviour.
+  """
+  def __init__(
+      self,
+      name: str,
+      components: Sequence[component.Component],
+      dialogue_memory: memory.DialogueMemory,
+      verbose: bool = False
+  ):
+    
+    self._name = name
+    self._components = {}
+    self._state = ''
+    self._dialogue_memory = dialogue_memory
+    self._verbose = verbose
+    
+    for component in components:
+      self._components[component.name()] = component
+
+  def name(self) -> str:
+    return self._name
+
+  def state(self) -> str:
+    return self._state
+
+  def observe(self, observation: str) -> None:
+    self._components["memory"].observe(observation)
+
+  def update(self) -> None:
+
+    # Update the components one by one, in order.
+    if self._verbose:
+      print(termcolor.colored("\n".join(self._components['memory']._memory.retrieve_recent(k=5)), color="light_magenta"))
+    
+    # First, the TPB components...
+    if self._dialogue_memory.in_conversation():
+      self._components["speech"].update()
+    else:
+      self._components["behaviour"].update()
+    self._components["attitude"].update()
+    self._components["people"].update()
+    self._components["motivation"].update()
+    self._components["norm"].update()
+    self._components["tpb"].update()
+
+    # Store the deliberation summary from all of the TPB components...
+    deliberation = self._components["memory"].summarize(
+      self._components["tpb"].stringify()
+    )
+    # and then put them into the working memory as the D component
+    self._components["memory"].observe(deliberation, wm_loc = "D")
+
+    # After deliberations are complete, synthesize the TPB model into the plan
+    self._components["situation"].update()
+    self._components["Plan"]._last_update = None # Set last update to none so it always replans.
+    self._components["Plan"].update()
+    self._state = self._components["Plan"].state()
+
+    plan = self._components["memory"].summarize(
+      self._state, kind = "plan"
+    )
+    
+    # Add the plan as the A component of the working memory
+    self._components["memory"].observe(plan, wm_loc = "A")
+
+>>>>>>> Stashed changes:examples/tpb/tpb.py
