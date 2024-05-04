@@ -66,8 +66,8 @@ def model_setup(
   return model, embedder
 
 def measurement_setup(
-    SETUP_TIME: datetime.date = datetime.datetime(hour=20, year=2024, month=10, day=1),
-    START_TIME: datetime.date = datetime.datetime(hour=18, year=2024, month=10, day=2),
+    setup_time: datetime.date = datetime.datetime(hour=20, year=2024, month=10, day=1),
+    start_time: datetime.date = datetime.datetime(hour=18, year=2024, month=10, day=2),
     time_step = datetime.timedelta(minutes=20)
 ) -> tuple[measurements_lib.Measurements, game_clock.MultiIntervalClock]:
   # Setup measurements and clock
@@ -75,7 +75,7 @@ def measurement_setup(
 
   # Clock setup
   clock = game_clock.MultiIntervalClock(
-    start=SETUP_TIME,
+    start=setup_time,
     step_sizes=[time_step, datetime.timedelta(seconds=10)])
   
   return measurements, clock

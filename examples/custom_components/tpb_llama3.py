@@ -21,7 +21,7 @@ from concordia.document import interactive_document
 from concordia.language_model import language_model
 from concordia.typing import component
 
-from examples.custom_components import utils
+from examples.tpb import utils
 from examples.custom_components import plan as plan
 
 MAX_JSONIFY_ATTEMPTS = 5
@@ -773,6 +773,115 @@ class SubjectiveNorm(TPBComponent):
       output[i]['norm'] = self.eval_norm(output[i]['people'])
 
     self._json = output
+
+class BehaviouralControl(TPBComponent):
+  """Behavioural control component."""
+  def __init__(
+      self,
+      name: str,
+      model: language_model.LanguageModel,
+      memory: associative_memory.AssociativeMemory,
+      player_config: formative_memories.AgentConfig,
+      components: Sequence[component.Component],
+      memory_component: component.Component | None = None,
+      clock_now: Callable[[], datetime.datetime] | None = None,
+      num_memories_to_retrieve: int = 100,
+      verbose: bool = False,
+  ):
+    """Initializes the Attitude component.
+
+    Args:
+      name: Name of the component.
+      model: Language model.
+      memory: Associative memory.
+      agent_name: Name of the agent.
+      clock_now: time callback to use for the state.
+      num_memories_to_retrieve: Number of memories to retrieve.
+      verbose: Whether to print the state.
+    """
+
+    # Initialize superclass
+    super().__init__(name=name,model=model,memory=memory,player_config=player_config,clock_now=clock_now,memory_component=memory_component,
+                     num_memories_to_retrieve=num_memories_to_retrieve,verbose=verbose)
+    
+    self._components = components
+
+  def jsonify(self) -> list[dict]:
+    """Returns the state of the component as a JSON-serializable dictionary."""
+
+    control_list = self._state.split("\n\nBEHAVIOUR\n\n")
+    self._state = self._state.replace("\n\nBEHAVIOUR\n\n", "")
+    motivs = {}
+
+    # Create a copy of the input json
+    output = self._components[0].json()
+
+    for control, output in zip(control_list, output):
+      output["behaviour"] = int(re.search(
+        r'(?<=Probability: )(\d+)',
+        control
+      ).group(1)) / 100
+    
+    return output
+  # @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
+  def _update(self) -> None:
+    mems = '\n'.join(
+        self._memory.retrieve_recent(
+            self._num_memories_to_retrieve, add_time=True
+        )
+    )
+
+    behavs = [item['behaviour'] for item in self._components[0].json()]
+
+    def question(behav):
+      prompt = interactive_document.InteractiveDocument(self._model)
+      prompt.statement(f"Memories of {self._agent_name}:\n{mems}")
+
+      if self._clock_now is not None:
+        prompt.statement(f"Current time: {self._clock_now()}.\n")
+
+      prompt.statement(f"Traits of {self._agent_name}: {self._traits}")
+      prompt.statement(f"Goals of {self._agent_name}: {self._goal}")
+
+      q = (
+          f"Instructions: \n"
+          f"Given the memories above, and the candidate behaviour below: \n\n"
+          f"{behav}\n\n"
+          f"Provide the probability that {self._agent_name} perceives that {utils.pronoun(self._config)} "
+          f"could succeed in doing this behaviour. Indicate with a number from 0 to 100 {utils.pronoun(self._config)}'s "
+          f"perception of the probability of succeeding. 0 is impossible, 100 is certain. "
+          f"This is not the likelihood that {self._agent_name} will do the behaviour, but rather the likelihood "
+          f"that {self._agent_name} would succeed if {utils.pronoun(self._config)} were to do the behaviour. "
+          f"Provide the response in the format (Probability: number). "
+          f"Remember to consider the full scale from 0 to 100 in the ratings. "
+          f"Do not provide any explanation or description."
+      )
+
+      return prompt, prompt.open_question(
+        q,
+        max_characters=5000,
+        max_tokens=3000
+      )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers = len(behavs)) as pool:
+      prompts = []
+      outputs = []
+      for prompt, output in pool.map(
+        question,
+        behavs
+      ):
+        prompts.append(prompt)
+        outputs.append(output)
+      
+    self._last_chain = prompts[-1]
+    self._state = "\n\nBEHAVIOUR\n\n".join(outputs)
+
+    self._json = self.jsonify()
+
+    assert(len(self._json) > 0), "Did not successfully parse the array into a list of outputs."
+
+    if self._verbose:
+      print(termcolor.colored(self._last_chain.view().text(), 'green'), end='')
 
 class TPB(TPBComponent):
   """Full TPB model."""
