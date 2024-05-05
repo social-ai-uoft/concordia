@@ -96,7 +96,7 @@ class AssociativeMemory:
         'tags': tuple(tags),
         'importance': importance,
     }
-    hashed_contents = hash(text)
+    hashed_contents = hash(f"{timestamp.strftime('[%Y-%m-%d %H:%M:%S]')} {text}")
     derived = {'embedding': self._embedder(text)}
     new_df = pd.Series(contents | derived).to_frame().T
 

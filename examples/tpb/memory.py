@@ -47,7 +47,7 @@ class TPBAgentConfig:
 
   def __post_init__(self):
     """Post-initialization hook."""
-    self.pronoun = lambda case: utils.pronoun(self.gender, case=case)
+    self.pronoun = lambda case="nominative": utils.pronoun(self.gender, case=case)
     self.age = lambda now: f"{utils.format_timedelta(now - self.date_of_birth)} old"
     
     # If a memory can be built from the dictionary keys, use them to build formative memories.
@@ -136,7 +136,7 @@ class WorkingMemory:
       # f"Reflection: {self.reflection} #TODO: Reflection is not yet implemented.
     )
 
-  def __next__(self):
+  def next(self):
     """Moves obs_2 to obs_1 and clears the other entries."""
     obs_1 = self.obs_2
     self.clear()
@@ -149,8 +149,9 @@ class EpisodicMemory(component.Component):
       model: language_model.LanguageModel,
       config: TPBAgentConfig,
       clock_now: Callable[[], datetime.datetime],
-      num_memories_to_retrieve: int = 100,
-      verbose: bool = False
+      num_memories: int = 100,
+      verbose: bool = False,
+      **kwargs
     ):
     """
     Initializes the episodic memory.
@@ -159,7 +160,7 @@ class EpisodicMemory(component.Component):
       model: A LanguageModel.
       config: A TPBAgentConfig.
       clock_now: A callable that returns the current time.
-      num_memories_to_retrieve: The number of memories to retrieve from the memory.
+      num_memories: The number of memories to retrieve from the memory.
       verbose: Whether to print out the retrieved memories.
     """
     self._model = model
@@ -167,7 +168,7 @@ class EpisodicMemory(component.Component):
     self._memory = config.memory
     self._agent_name = config.name
     self._clock_now = clock_now
-    self._num_memories_to_retrieve = num_memories_to_retrieve
+    self._num_memories = num_memories
     self._verbose = verbose
     self._wm = WorkingMemory()
 
@@ -178,7 +179,7 @@ class EpisodicMemory(component.Component):
     """Stores the observation in the episodic memory."""
 
     # Set working memory value.
-    self._wm.set(**{wm_loc : observation.strip()})
+    self._wm.set(wm_loc, observation.strip())
 
     if wm_loc == 'obs_2':
       # If the working memory has a full SARSA representation, store the full set of observations...
@@ -190,7 +191,7 @@ class EpisodicMemory(component.Component):
       
       self._memory.add(f"[observation] {ltm_memory}", timestamp=self._clock_now(), tags=['observation'], importance = 1.)
       # Shift the most recent observation to be the initial state for the next one.
-      next(self._wm)
+      self._wm.next()
 
   def summarize(self, observations: str, kind: str = "deliberations") -> str:
     """Summarize the agent's internal deliberations."""

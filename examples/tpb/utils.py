@@ -100,6 +100,11 @@ def softmax(x: ArrayLike, tau: float):
   x = np.asarray(x) if not isinstance(x, np.ndarray) else x
   return np.exp(tau*x) / sum(np.exp(tau*x))
 
+def normalize(x: ArrayLike):
+  """Normalizes an array of values."""
+  x = np.asarray(x) if not isinstance(x, np.ndarray) else x
+  return x / sum(x)
+
 ##################################
 # endregion                      #
 ##################################
