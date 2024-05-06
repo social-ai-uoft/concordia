@@ -9,13 +9,13 @@ import pickle
 
 from typing import Any, Iterable
 
+from concordia.agents import basic_agent
 from concordia.associative_memory import (
   associative_memory, formative_memories, 
   blank_memories, importance_function
 )
 from concordia.document import interactive_document
-from concordia.language_model import language_model
-from concordia.typing import agent, component
+from concordia.typing import agent, component, clock
 
 from examples.tpb import utils
 
@@ -93,22 +93,36 @@ class AgentConfig:
       config_dict = pickle.load(f)
     return cls(**config_dict)
 
-class TPBAgent(agent.GenerativeAgent):
+class TPBAgent(basic_agent.BasicAgent):
   """
   Agent that implements a TPB model.
   """
   def __init__(
       self,
       config: AgentConfig,
-      full_model: component.Component
+      full_model: component.Component,
+      clock: clock.GameClock,
+      num_memories: int = 10,
+      update_interval: datetime.timedelta = datetime.timedelta(hours=1),
+      verbose: bool = False
   ):
     
-    self._config = config
-    self._model = config.extras['model']
+    super().__init__(
+      model=config.extras['model'],
+      memory=config.memory,
+      agent_name=config.name,
+      clock=clock,
+      components=None,
+      update_interval=update_interval,
+      num_memories_retrieved=num_memories,
+      verbose=verbose
+    )
+
+    self._goal = config.goal
     self._full_model = full_model
     
-  def name(self) -> str:
-    return self._config.name
+  def update_goal(self, new_goal: str) -> None:
+    self._goal = new_goal
   
   def act(
       self,

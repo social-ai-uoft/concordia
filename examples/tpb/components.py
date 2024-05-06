@@ -31,7 +31,7 @@ class TPBComponent(component.Component):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component] | None = None,
       num_memories: int = None,
       clock_now: Callable[[], datetime.datetime] | None = None,
@@ -252,7 +252,7 @@ class Attitude(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component],
       num_memories: int = 100,
       clock_now: Callable[[], datetime.datetime] | None = None,
@@ -384,7 +384,7 @@ class People(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component],
       num_people: int = 5,
       num_memories: int = 100,
@@ -478,7 +478,7 @@ class People(TPBComponent):
     self._last_chain = prompts[-1]
     self._state = "\n\n####\n\n".join(outputs)
 
-    self._json = self.jsonify()
+    self.jsonify()
 
     assert([] not in [behav['people'] for behav in self.json()]), self._err("Did not successfully parse all people.")
 
@@ -489,7 +489,7 @@ class Motivation(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component],
       num_memories: int = 100,
       clock_now: Callable[[], datetime.datetime] | None = None,
@@ -577,7 +577,7 @@ class SubjectiveNorm(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component],
       num_memories: int = 100,
       clock_now: Callable[[], datetime.datetime] | None = None,
@@ -625,7 +625,7 @@ class BehaviouralControl(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component],
       num_memories: int = 100,
       clock_now: Callable[[], datetime.datetime] | None = None,
@@ -700,7 +700,7 @@ class BehaviouralIntention(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component],
       w: float = 0.5,
       tau: float = 1.,
@@ -884,7 +884,7 @@ class ThinGoal(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       num_memories: int = 100,
       clock_now: Callable[[], datetime.datetime] | None = None,
       verbose: bool = False,

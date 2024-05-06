@@ -95,7 +95,7 @@ class OllamaLanguageModel(language_model.LanguageModel):
 
     terminators = self._terminators.extend(terminators) if terminators is not None else self._terminators
 
-    response = self._client(
+    response = self._client.invoke(
         prompt_with_system_message,
         stop=terminators,
         temperature=temperature,
