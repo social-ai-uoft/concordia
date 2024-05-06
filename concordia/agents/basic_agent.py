@@ -210,6 +210,7 @@ class BasicAgent(
       action_spec: agent.ActionSpec = agent.DEFAULT_ACTION_SPEC,
       memorize: bool = False,
   ):
+    
     if not action_spec:
       action_spec = agent.DEFAULT_ACTION_SPEC
     self._maybe_update()
@@ -255,6 +256,8 @@ class BasicAgent(
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
       executor.map(get_externality, self._components.values())
+
+    print(termcolor.colored(f'Output: {output}', color='red'))
 
     self._last_chain_of_thought = prompt.view().text().splitlines()
     current_log = {

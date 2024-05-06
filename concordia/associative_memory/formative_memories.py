@@ -212,8 +212,16 @@ class FormativeMemoryFactory:
         max_tokens=6000,
         terminators=[],
     )
-
-    episodes = aggregated_result.split('\n\n\n')
+    
+    # Only include lines that specify ages.
+    _NUMBERS = [
+      "one", "two", "three", "four", "five", "six", 
+      "seven", "eight", "nine", "ten", "eleven", 
+      "twelve", "thirteen", "fourteen", "fifteen", 
+      "sixteen", "seventeen", "eighteen", "nineteen",
+      "twenty", "thirty", "forty", "fifty", "sixty",
+      "seventy", "eighty", "ninety", "hundred"]
+    episodes = [item for item in aggregated_result.split('\n') if (bool(re.search(r'\d+?', item))) or (any(re.search(re.compile(r'(-?)' + n + r'(-?)'), item) for n in _NUMBERS)) and (len(item) > 5)]
 
     if len(episodes) != len(list(agent_config.formative_ages)):
       logger.warning(

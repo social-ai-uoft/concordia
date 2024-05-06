@@ -171,6 +171,7 @@ class GameMaster(simulacrum_game_master.GameMaster):
     return list(self._players_by_name.keys())
 
   def update_from_player(self, player_name: str, action_attempt: str):
+
     prompt = interactive_document.InteractiveDocument(self._model)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -185,8 +186,6 @@ class GameMaster(simulacrum_game_master.GameMaster):
       state_of_component = comp.state()
       if state_of_component:
         prompt.statement(comp.name() + ': ' + state_of_component + '\n')
-
-    prompt.statement(f"\n{player_name}'s attempted action: {action_attempt}")
 
     # Produce the event that has happened as the result of the action attempt
     prompt, event_statement = thought_chains.run_chain_of_thought(
@@ -284,7 +283,9 @@ class GameMaster(simulacrum_game_master.GameMaster):
       player: basic_agent.BasicAgent,
       action_spec: simulacrum_agent.ActionSpec | None = None,
   ):
+
     self.update_components()
+
     self.view_for_player(player_name=player.name)
 
     if action_spec:

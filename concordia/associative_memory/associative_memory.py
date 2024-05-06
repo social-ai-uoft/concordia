@@ -96,17 +96,18 @@ class AssociativeMemory:
         'tags': tuple(tags),
         'importance': importance,
     }
-    hashed_contents = hash(contents.values())
+    hashed_contents = hash(f"{timestamp.strftime('[%Y-%m-%d %H:%M:%S]')} {text}")
     derived = {'embedding': self._embedder(text)}
     new_df = pd.Series(contents | derived).to_frame().T
 
     with self._memory_bank_lock:
       if hashed_contents in self._stored_hashes:
-        return
-      self._memory_bank = pd.concat(
-          [self._memory_bank, new_df], ignore_index=True
-      )
-      self._stored_hashes.add(hashed_contents)
+        pass
+      else:
+        self._memory_bank = pd.concat(
+            [self._memory_bank, new_df], ignore_index=True
+        )
+        self._stored_hashes.add(hashed_contents)
 
   def extend(
       self,
@@ -219,7 +220,7 @@ class AssociativeMemory:
         ) + next_time.dt.strftime('- %H:%M:%S]: ')
         output = interval + data['text']
       else:
-        output = data['time'].dt.strftime('[%d %b %Y %H:%M:%S] ') + data['text']
+        output = pd.to_datetime(data['time']).dt.strftime('[%d %b %Y %H:%M:%S] ') + data['text']
     else:
       output = data['text']
 
