@@ -1,6 +1,7 @@
+import datetime
+import json
 import os
 import pickle
-import datetime
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -230,6 +231,43 @@ def threading(func, enabled: bool = True):
   def wrapper(*args,  **kwargs):
     kwargs['threading'] = enabled
     return func(*args,  **kwargs)
+  
+class pipe(object):
+    __name__ = "pipe"
+
+    def __init__(self, function):
+        self.function = function
+        self.__doc__ = function.__doc__
+
+        self.chained_pipes = []
+
+    def __rshift__(self, other):
+        assert isinstance(other, pipe)
+        self.chained_pipes.append(other)
+        return self
+
+    def __rrshift__(self, other):
+
+        result = self.function(other)
+
+        for p in self.chained_pipes:
+            result = p.__rrshift__(result)
+        return result
+
+    def __call__(self, *args, **kwargs):
+        return pipe(lambda x: self.function(x, *args, **kwargs))
+    
+@pipe
+def pprint(string: str) -> None:
+  """Piped print function. Takes a string passed in with the right
+  bit shift pipe and prints it."""
+  print(string)
+
+@pipe
+def pipe_json(string: str) -> str:
+  """Piped JSON format function. Takes a string passed in with the
+  right bit shift pipe to be printed by the `pprint` function."""
+  return json.dumps(string)
 
 ##################################
 # endregion Decorators           #

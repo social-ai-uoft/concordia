@@ -5,7 +5,6 @@
 import datetime
 import re
 import concurrent.futures
-import json
 import os
 import termcolor
 import numpy as np
@@ -19,8 +18,10 @@ from concordia.document import interactive_document
 from concordia.language_model import language_model
 from concordia.typing import component
 
-from examples.tpb import utils
+from examples.tpb import agent as tpb_agent
 from examples.tpb import memory as tpb_memory
+from examples.tpb import utils
+
 
 MAX_JSONIFY_ATTEMPTS = 5
 
@@ -188,7 +189,7 @@ class Behaviour(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       num_memories: int = 100,
       num_behavs: int = 5,
       clock_now: Callable[[], datetime.datetime] | None = None,
@@ -409,7 +410,7 @@ class People(TPBComponent):
     self._kwargs = kwargs
     self._num_people = num_people
 
-  def jsonify(self) -> list:
+  def jsonify(self) -> None:
     
     # Split on behaviours
     people_lists = re.split(
@@ -451,7 +452,7 @@ class People(TPBComponent):
         "people": behav_people
       })
 
-    return output
+    self._json = output
 
   @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
   def _update(self) -> None:
@@ -865,6 +866,18 @@ class BehaviouralIntention(TPBComponent):
       self._components["thin_goal"].update()
       self._state = self._components["thin_goal"].state()
 
+  def _update(self) -> None:
+
+    behavs = self.collate("behaviour")
+    behavioural_intentions = self.evaluate_intentions()
+
+    chosen_behav = np.random.choice(behavs, p=behavioural_intentions)
+
+    self._state = (
+      f'After considering {self._config.pronoun(case = "genitive")} options, '
+      f"{self._agent_name}'s current goal is to successfully accomplish or complete the following behaviour: {chosen_behav}."
+    )
+
 class ThinGoal(TPBComponent):
   """Computes a goal on first activation when no state exists."""
   def __init__(
@@ -928,6 +941,9 @@ class TPBModel(component.Component):
 
   def observe(self, observation: str) -> None:
     self._components["memory"].observe(observation)
+
+  def component(self, name) -> component.Component:
+    return self._components[name]
 
   def update(self) -> None:
     # First, the TPB components...
