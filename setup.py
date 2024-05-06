@@ -15,37 +15,11 @@
 
 """Install script for setuptools."""
 
-import platform
 import setuptools
-
-IS_M1_OSX = platform.system() == 'Darwin' and platform.machine() == 'arm64'
-
-REQUIREMENTS = (
-    # TODO: b/312199199 - remove some requirements.
-    'absl-py',
-    'google-cloud-aiplatform',
-    'ipython',
-    'langchain',
-    'matplotlib',
-    'numpy',
-    'openai>=1.3.0',
-    'pandas<=2.0.3',
-    'python-dateutil',
-    'reactivex',
-    'retry',
-    'scipy',
-    'tensorflow',
-    'tensorflow-hub',
-    'tensorflow-text',
-    'termcolor',
-    'typing-extensions',
-)
-M1_OSX_REQUIREMENTS = tuple(set(REQUIREMENTS) - {'tensorflow-text'})
-
 
 setuptools.setup(
     name='gdm-concordia',
-    version='1.2.0',
+    version='1.3.0',
     license='Apache 2.0',
     license_files=['LICENSE'],
     url='https://github.com/google-deepmind/concordia',
@@ -75,7 +49,23 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['concordia', 'concordia.*']),
     package_data={},
     python_requires='>=3.11',
-    install_requires=M1_OSX_REQUIREMENTS if IS_M1_OSX else REQUIREMENTS,
+    install_requires=(
+        # TODO: b/312199199 - remove some requirements.
+        'absl-py',
+        'google-cloud-aiplatform',
+        'ipython',
+        'langchain',
+        'matplotlib',
+        'numpy',
+        'openai>=1.3.0',
+        'pandas<=2.0.3',
+        'python-dateutil',
+        'reactivex',
+        'retry',
+        'scipy',
+        'termcolor',
+        'typing-extensions',
+    ),
     extras_require={
         # Used in development.
         'dev': [
