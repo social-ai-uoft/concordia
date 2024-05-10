@@ -8,7 +8,7 @@ from concordia.language_model import language_model
 from concordia.typing import component
 
 from examples.tpb.components import TPBComponent
-from examples.tpb import memory as tpb_memory
+from examples.tpb import agent as tpb_agent
 
 class TPBPlan(TPBComponent):
   """Theory of Planned Behaviour plan component."""
@@ -16,7 +16,7 @@ class TPBPlan(TPBComponent):
       self,
       name: str,
       model: language_model.LanguageModel,
-      config: tpb_memory.TPBAgentConfig,
+      config: tpb_agent.AgentConfig,
       components: Sequence[component.Component] | None = None,
       num_memories: int = None,
       goal: component.Component | None = None,
@@ -27,7 +27,7 @@ class TPBPlan(TPBComponent):
       **kwargs
   ):
     """Initialize the Plan component.
-    
+
     Args:
       name: The name of the component.
       model: The language model.
@@ -67,7 +67,7 @@ class TPBPlan(TPBComponent):
         "Situation": context,
         "Current time": self._clock_now()
       }
-    
+
     if self._current_plan:
       statements["Current plan"] = self._current_plan
 

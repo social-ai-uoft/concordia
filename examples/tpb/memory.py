@@ -58,8 +58,8 @@ class WorkingMemory:
     """Moves obs_2 to obs_1 and clears the other entries."""
     obs_1 = self.obs_2
     self.clear()
-    self.set(obs_1=obs_1)
-      
+    self.set("obs_1", obs_1)
+
 class EpisodicMemory(component.Component):
   """A memory that stores episodic memories."""
   def __init__(
@@ -106,7 +106,7 @@ class EpisodicMemory(component.Component):
       # Otherwise, just log the single observation
       else:
         ltm_memory = observation.strip()
-      
+
       self._memory.add(f"[observation] {ltm_memory}", timestamp=self._clock_now(), tags=['observation'], importance = 1.)
       # Shift the most recent observation to be the initial state for the next one.
       self._wm.next()
@@ -146,4 +146,3 @@ class EpisodicMemory(component.Component):
     )
 
     return summary
-  

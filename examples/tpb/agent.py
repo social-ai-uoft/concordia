@@ -10,12 +10,13 @@ import pickle
 from typing import Any, Iterable
 
 from concordia.associative_memory import (
-  associative_memory, formative_memories, 
+  associative_memory, formative_memories,
   blank_memories, importance_function
 )
 from concordia.document import interactive_document
 from concordia.language_model import language_model
-from concordia.typing import agent, component
+from concordia.typing import agent, component, clock
+from concordia.utils import helper_functions
 
 from examples.tpb import utils
 
@@ -47,15 +48,15 @@ class AgentConfig:
     """Post-initialization hook."""
     self.pronoun = lambda case="nominative": utils.pronoun(self.gender, case=case)
     self.age = lambda now: f"{utils.format_timedelta(now - self.date_of_birth)} old"
-    
+
     # If a memory can be built from the dictionary keys, use them to build formative memories.
     mem_params = ['model', 'embedder', 'clock_now', 'importance']
     if all(param in self.extras.keys() for param in mem_params):
       self.memory = None
       memory_factory = blank_memories.MemoryFactory(self.extras['model'], self.extras['embedder'], self.extras['importance'], self.extras['clock_now'])
       formative_memory_factory = formative_memories.FormativeMemoryFactory(
-        model=self.extras['model'], 
-        shared_memories=(self.context,), 
+        model=self.extras['model'],
+        shared_memories=(self.context,),
         blank_memory_factory_call=memory_factory.make_blank_memory)
       # Use the agent configuration to make formative memories.
       self.memory: associative_memory.AssociativeMemory = formative_memory_factory.make_memories(self)
@@ -100,31 +101,81 @@ class TPBAgent(agent.GenerativeAgent):
   def __init__(
       self,
       config: AgentConfig,
-      full_model: component.Component
+      full_model: component.Component,
+      clock: clock.GameClock,
   ):
-    
+
     self._config = config
+    self._clock = clock
     self._model = config.extras['model']
     self._full_model = full_model
-    
+    self._log = []
+    self.update()
+
+  @property
   def name(self) -> str:
     return self._config.name
-  
+
+  def state(self) -> str:
+    return self._full_model.state()
+
+  def update(self) -> None:
+    self._full_model.update()
+
+  def get_last_log(self):
+    if not self._log:
+      return ''
+    return self._log[-1]
+
   def act(
       self,
-      action_spec: agent.ActionSpec = agent.DEFAULT_ACTION_SPEC
+      action_spec: agent.ActionSpec = agent.DEFAULT_ACTION_SPEC,
+      memorize: bool = False,
   ):
-    
-    prompt = interactive_document.InteractiveDocument(model=self._model)
 
-    plan = self._full_model.state()
-    intention = self._full_model.component("intention").state()
+    if not action_spec:
+      action_spec = agent.DEFAULT_ACTION_SPEC
+    self.update()
+    prompt = interactive_document.InteractiveDocument(self._model)
+    context_of_action = '\n'.join([
+        f'{self.state()}',
+    ])
 
-    prompt.statement(
-      f"Context of action:\n\n"
-      f"{intention}\n\n"
-      f"{plan}\n\n"
+    prompt.statement(context_of_action)
+
+    call_to_action = action_spec.call_to_action.format(
+        agent_name=self.name,
+        timedelta=helper_functions.timedelta_to_readable_str(
+            self._clock.get_step_size()
+        ),
     )
+    output = ''
 
-    
-    
+    if action_spec.output_type == 'FREE':
+      output = self.name + ' '
+      output += prompt.open_question(
+          call_to_action,
+          max_characters=2500,
+          max_tokens=2200,
+          answer_prefix=output,
+      )
+    elif action_spec.output_type == 'CHOICE':
+      idx = prompt.multiple_choice_question(
+          question=call_to_action, answers=action_spec.options
+      )
+      output = action_spec.options[idx]
+    elif action_spec.output_type == 'FLOAT':
+      raise NotImplementedError
+
+    self._last_chain_of_thought = prompt.view().text().splitlines()
+
+    current_log = {
+        'date': self._clock.now(),
+        'Action prompt': self._last_chain_of_thought,
+    }
+
+    self._log.append(current_log)
+
+  def observe(self, observation: str) -> None:
+
+    self._full_model.observe(observation=observation)
