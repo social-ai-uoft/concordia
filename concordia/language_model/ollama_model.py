@@ -121,7 +121,11 @@ class OllamaLanguageModel(language_model.LanguageModel):
       seed: int | None = None,
   ) -> tuple[int, str, dict[str, float]]:
     max_characters = len(max(responses, key=len))
-    prompt_with_system_message = f"{self._system_message}\n\n{prompt}"
+    sysmsg2 = (
+      'If you see the phrase \'Answer: (\', then continue with a letter option, '
+      'e.g., a), b), c), or d).'
+    )
+    prompt_with_system_message = f"{self._system_message}{sysmsg2}\n\n{prompt}"
     sample = self.sample_text(
         prompt_with_system_message,
         max_characters=max_characters,

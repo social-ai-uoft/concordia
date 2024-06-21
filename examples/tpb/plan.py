@@ -27,7 +27,7 @@ class TPBPlan(TPBComponent):
       **kwargs
   ):
     """Initialize the Plan component.
-    
+
     Args:
       name: The name of the component.
       model: The language model.
@@ -68,7 +68,7 @@ class TPBPlan(TPBComponent):
         "Situation": context,
         "Current time": self._clock_now()
       }
-    
+
     if self._current_plan:
       statements["Current plan"] = self._current_plan
 

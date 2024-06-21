@@ -1,0 +1,60 @@
+{
+    "questions": [
+      {
+        "question": "What is the probability that you will sing for the restless crowd at the bar on stage?",
+        "options": [
+            "<=20%",
+            "<=40%",
+            "<=60%",
+            "<=80%",
+            "<=100%"
+        ],
+        "correct_answer": 0
+      },
+      {
+        "question": "One of your close friends is at the bar too. What the probability that you will sing for your friend?",
+        "options": [
+            "<=20%",
+            "<=40%",
+            "<=60%",
+            "<=80%",
+            "<=100%"
+        ],
+        "correct_answer": 1
+      },
+      {
+        "question": "You had a few drinks at the bar and feels tipsy. What the probability that you will sing for the restless crowd at the bar?",
+        "options": [
+            "<=20%",
+            "<=40%",
+            "<=60%",
+            "<=80%",
+            "<=100%"
+        ],
+        "correct_answer": 2
+      },
+      {
+        "question": "You feels tipsy after a few drinks at the bar and your close friend encourages you to get on the stage to sing, what the probability that you will sing for the restless crowd at the bar?",
+        "options": [
+            "<=20%",
+            "<=40%",
+            "<=60%",
+            "<=80%",
+            "<=100%"
+        ],
+        "correct_answer": 3
+      },
+      {
+        "question": "You feels tipsy after a few drinks at the bar and your close friend asks you to sing just for them, what the probability that you will sing for her close friend?",
+        "options": [
+            "<=20%",
+            "<=40%",
+            "<=60%",
+            "<=80%",
+            "<=100%"
+        ],
+        "correct_answer": 4
+      }
+    ]
+  }
+  

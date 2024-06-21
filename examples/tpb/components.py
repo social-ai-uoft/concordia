@@ -80,7 +80,7 @@ class TPBComponent(component.Component):
       **kwargs
   ):
     """Initialize a base TPB component.
-    
+
     Args:
       name: The name of the component.
       model: The language model.
@@ -119,11 +119,11 @@ class TPBComponent(component.Component):
     if self._verbose:
       self._print(f"{self.name()} initialized.")
     self._is_initialized = True
-  
+
   def json(self) -> list[dict]:
     """Return the state as a JSON array."""
     return self._json
-  
+
   def jsonify(self) -> None:
     """Convert the state into a JSON array."""
     pass
@@ -138,18 +138,18 @@ class TPBComponent(component.Component):
 
     for k, v in statements.items():
       if isinstance(v, datetime.datetime): # Special case: clock now
-        prompt.statement(f"{k}: {v}") 
+        prompt.statement(f"{k}: {v}")
       elif v is not None: # Base case
         prompt.statement(f"{k} of {self._config.name}: {v}")
 
   def prompt_batch(
-      self, 
-      inputs: list[str], 
-      func: Callable[[str], tuple], 
+      self,
+      inputs: list[str],
+      func: Callable[[str], tuple],
     ):
     """Batch prompts into a single-threaded for loop
     or a multi-threaded executor.
-    
+
     Args:
       inputs: A list of question texts to pose.
       func: the question function (i.e., the question-asking prompt)"""
@@ -171,7 +171,7 @@ class TPBComponent(component.Component):
           inputs
         ):
           prompts.append(prompt)
-          outputs.append(output)      
+          outputs.append(output)
     return prompts, outputs
 
   def question(
@@ -187,13 +187,13 @@ class TPBComponent(component.Component):
     Returns:
       tuple[InteractiveDocument, str]: The prompt and the response.
     """
-    
+
     mems = '\n'.join(
       self._memory.retrieve_recent(
         self._num_memories, add_time=True
       )
     )
-        
+
     prompt = interactive_document.InteractiveDocument(self._model)
 
     # Default prompt statements unless they are specified by the input.
@@ -211,7 +211,7 @@ class TPBComponent(component.Component):
       max_characters=5000,
       max_tokens=3000
     )
-    
+
   def _update(self) -> None:
     pass
 
@@ -240,7 +240,7 @@ class Behaviour(TPBComponent):
    ):
     """
     Initializes the Behaviour component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -258,7 +258,7 @@ class Behaviour(TPBComponent):
     self._latest_observation = "\n".join()
   
   def jsonify(self) -> None:
-    
+
     behaviour_list = []
     # Split on each digit
     lines = re.split(r'\d[\.:]\s?', self._state)
@@ -291,7 +291,7 @@ class Behaviour(TPBComponent):
 
     # Convert the state to a JSON.
     self.jsonify()
-  
+
 class Attitude(TPBComponent):
   """This component generates a personal attitude towards a given behaviour."""
 
@@ -308,7 +308,7 @@ class Attitude(TPBComponent):
    ):
     """
     Initializes the Attitude component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -319,12 +319,12 @@ class Attitude(TPBComponent):
       verbose: Whether to print the state."""
 
     # Initialize superclass
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories, 
+    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
                      clock_now=clock_now, verbose=verbose, components=components, **kwargs)
 
   def eval_attitude(self, consequences: list[dict]) -> int:
     """Generate a global attitude for a behaviour given a list of consequences.
-    
+
     Args:
       consequences: A list of dictionaries listing the consequence description, value, and likelihood."""
     vs = [x["value"] for x in consequences]
@@ -378,7 +378,7 @@ class Attitude(TPBComponent):
             except AttributeError:
               self._warn(f"The line: {line} could not be parsed using the regex syntax. Retrying.")
               raise AssertionError("Unable to parse the line. Retrying.")
-            
+
             consequences.append(consequence)
       # Add the behaviours and the consequences to the output array
       output.append({
@@ -386,9 +386,9 @@ class Attitude(TPBComponent):
         "consequences": consequences,
         "attitude": self.eval_attitude(consequences)
       })
-    
+
     self._json = output
-       
+
   @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
   def _update(self) -> None:
 
@@ -412,7 +412,7 @@ class Attitude(TPBComponent):
           f"This should be in the form of (Value: number, Likelihood: number) for each potential consequence. "
           f"Here is an example: (Value: 8, Likelihood: 20)."
       )
-    
+
     behavs = [item['behaviour'] for item in self._components[0].json()]
 
     prompts, outputs = self.prompt_batch([q.format(behav=behav) for behav in behavs], self.question)
@@ -441,7 +441,7 @@ class People(TPBComponent):
    ):
     """
     Initializes the People component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -452,13 +452,13 @@ class People(TPBComponent):
       verbose: Whether to print the state."""
 
     # Initialize superclass
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories, 
+    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
                      clock_now=clock_now, verbose=verbose, components=components)
     self._kwargs = kwargs
     self._num_people = num_people
 
   def jsonify(self) -> None:
-    
+
     # Split on behaviours
     people_lists = re.split(
       r"\n\n####\n\n",
@@ -521,7 +521,7 @@ class People(TPBComponent):
     behavs = [item['behaviour'] for item in self._components[0].json()]
 
     prompts, outputs = self.prompt_batch([q.format(behav=behav) for behav in behavs], self.question)
-      
+
     self._last_chain = prompts[-1]
     self._state = "\n\n####\n\n".join(outputs)
 
@@ -545,7 +545,7 @@ class Motivation(TPBComponent):
    ):
     """
     Initializes the People component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -556,7 +556,7 @@ class Motivation(TPBComponent):
       verbose: Whether to print the state."""
 
     # Initialize superclass
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories, 
+    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
                      clock_now=clock_now, verbose=verbose, components=components)
     self._kwargs = kwargs
     self._all_people: list[str] = []
@@ -572,7 +572,7 @@ class Motivation(TPBComponent):
         r'(?<=Motivation: )(\d+)',
         motiv
       ).group(1)) / 100
-    
+
     # Create a copy of the input json
     output = self._components[0].json()
 
@@ -584,7 +584,7 @@ class Motivation(TPBComponent):
         if output[i]['people'][j]['person'].lower() in motivs.keys():
           # Add it to the json
           output[i]['people'][j]['motivation'] = motivs[output[i]['people'][j]['person'].lower()]
-    
+
     self._json = output
 
   @retry(AssertionError, tries = MAX_JSONIFY_ATTEMPTS)
@@ -603,19 +603,19 @@ class Motivation(TPBComponent):
         f"Provide a value from 0 to 100, with 0 being not at all, and 100 being the most infuential, "
         f"in the format (Motivation: number). Remember to consider the full scale from 0 to 100 in the ratings. "
         f"Do not provide any explanation or description."
-    ) 
+    )
 
     # This horrible expression generates a list of uniquely identified people across all behaviours.
     self._all_people = list(set.union(*map(set, ([j['person'] for j in i] for i in [item['people'] for item in self._components[0].json()]))))
 
     prompts, outputs = self.prompt_batch([q.format(person=person) for person in self._all_people], self.question)
-      
+
     self._last_chain = prompts[-1]
     self._state = "\n\n####\n\n".join(outputs)
 
     self.jsonify()
 
-    assert(len(self._json) > 0), "Did not successfully parse the array into a list of outputs."    
+    assert(len(self._json) > 0), "Did not successfully parse the array into a list of outputs."
 
 class SubjectiveNorm(TPBComponent):
   """This computes the subjective norms applied to a behaviour."""
@@ -633,7 +633,7 @@ class SubjectiveNorm(TPBComponent):
    ):
     """
     Initializes the People component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -644,20 +644,20 @@ class SubjectiveNorm(TPBComponent):
       verbose: Whether to print the state."""
 
     # Initialize superclass
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories, 
+    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
                      clock_now=clock_now, verbose=verbose, components=components)
 
   def eval_norm(self, people: list[dict]) -> int:
     """Generate a global subjective norm for a behaviour given a list of people.
-    
+
     Args:
       people: A list of dictionaries listing the consequence description, value, and likelihood."""
     vs = [x["approval"] for x in people]
     ls = [x["motivation"] for x in people]
     return(sum([v * l for v, l in zip(vs, ls)]))
-          
+
   def update(self) -> None:
-    
+
     # Take the motivation json
     output = self._components[0].json()
     for i in range(len(output)):
@@ -681,7 +681,7 @@ class BehaviouralControl(TPBComponent):
    ):
     """
     Initializes the BehaviouralControl component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -692,7 +692,7 @@ class BehaviouralControl(TPBComponent):
       verbose: Whether to print the state."""
 
     # Initialize superclass
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories, 
+    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
                      clock_now=clock_now, verbose=verbose, components=components, **kwargs)
 
   def jsonify(self) -> None:
@@ -709,7 +709,7 @@ class BehaviouralControl(TPBComponent):
         r'(?<=Probability: )(\d+)',
         control
       ).group(1)) / 100
-    
+
     self._json = output
 
   def _update(self) -> None:
@@ -732,7 +732,7 @@ class BehaviouralControl(TPBComponent):
     behavs = [item['behaviour'] for item in self._components[0].json()]
 
     prompts, outputs = self.prompt_batch([q.format(behav=behav) for behav in behavs], self.question)
-      
+
     self._last_chain = prompts[-1]
     self._state = "\n\n####\n\n".join(outputs)
 
@@ -758,7 +758,7 @@ class BehaviouralIntention(TPBComponent):
    ):
     """
     Initializes the BehaviouralIntention component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -769,7 +769,7 @@ class BehaviouralIntention(TPBComponent):
       verbose: Whether to print the state."""
 
     # Initialize superclass
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories, 
+    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
                      clock_now=clock_now, verbose=verbose, components=components)
     self._w = w
     self._softmax = lambda x : utils.softmax(x, tau)
@@ -786,17 +786,17 @@ class BehaviouralIntention(TPBComponent):
 
   def collate(self, measure: str) -> list:
     """Collate the outcomes from a component for each behaviour..
-    
+
     Args:
       measure (str): The component to get the measure from.
-      
+
     Return:
       list: A list of the outputs from the component for each behaviour."""
     if measure == "behaviour":
       return [re.search(r'(.*?)(?=:)', behaviour["behaviour"]).group(1).replace('*', '').strip() if re.search(r'(.*?)(?=:)', behaviour["behaviour"]) is not None else behaviour["behaviour"].replace("*", "").strip() for behaviour in self._components["attitude"].json()]
     else:
       return [behaviour[measure] for behaviour in self._components[measure].json()]
-    
+
   def evaluate_intentions(self) -> np.ndarray:
     """
     Compute the behavioural intentions.
@@ -818,7 +818,7 @@ class BehaviouralIntention(TPBComponent):
     behav_probs = utils.normalize(behav_probs)
 
     return behav_probs
-  
+
   def stringify(self) -> str:
     """Return a string containing behaviour, consequences, and subjective norms for each behaviour."""
 
@@ -848,24 +848,24 @@ class BehaviouralIntention(TPBComponent):
       output += "\n\n"
 
     return output
-  
+
   def evaluate_probability_of_behaviour(self, behaviour: int | str) -> float:
     """Compute the probability of a behaviour.
-    
+
     Args:
       behaviour: An integer indicating the index of the behaviour or a string matching the description of the behaviour."""
-    
+
     if isinstance(behaviour, str):
       behaviours = self.collate("behaviour")
       index = behaviours.index(behaviours)
     else:
       index = behaviour
-    
+
     return self.evaluate_intentions()[index]
-  
+
   def plot(self, file_path: str | os.PathLike | None = None) -> None:
     """Plot the outputs.
-    
+
     Args:
       file_path: An optional string or PathLike indicating the location to save the file."""
     import matplotlib.pyplot as plt
@@ -939,7 +939,7 @@ class ThinGoal(TPBComponent):
    ):
     """
     Initializes the ThinGoal component.
-    
+
     Args:
       name: The name of the component.
       model: Language model.
@@ -948,7 +948,7 @@ class ThinGoal(TPBComponent):
       num_behavs: The number of behaviours to generate.
       clock_now: Callback for the game clock.
       verbose: Whether to print the state."""
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories, 
+    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
                      clock_now=clock_now, verbose=verbose)
 
   def _update(self):
@@ -963,7 +963,7 @@ class ThinGoal(TPBComponent):
     )
 
     self._last_chain = prompt
-    
+
 class TPBModel(component.Component):
   """Full sequential component architecture for the Theory of Planned Behaviour."""
 
@@ -973,7 +973,7 @@ class TPBModel(component.Component):
       components: Sequence[TPBComponent],
       verbose: bool = False
   ):
-    
+
     self._name = name
     self._state = ''
     self._components: dict[str, TPBComponent] = {}
@@ -1017,6 +1017,6 @@ class TPBModel(component.Component):
     plan = self._components["memory"].summarize(
       self._state, kind = "plan"
     )
-    
+
     # Add the plan as the action component of the working memory
     self._components["memory"].observe(plan, wm_loc = "action")
