@@ -14,8 +14,12 @@
 
 """Ollama Language Model."""
 
-from collections.abc import Collection, Sequence
+import json
 import re
+import requests
+
+from collections.abc import Collection, Sequence
+from retry import retry
 
 from concordia.language_model import language_model
 from concordia.utils import measurements as measurements_lib
@@ -95,7 +99,7 @@ class OllamaLanguageModel(language_model.LanguageModel):
 
     terminators = self._terminators.extend(terminators) if terminators is not None else self._terminators
 
-    response = self._client(
+    response = self._client.invoke(
         prompt_with_system_message,
         stop=terminators,
         temperature=temperature,
@@ -107,6 +111,7 @@ class OllamaLanguageModel(language_model.LanguageModel):
       )
     return response
 
+  @retry(ValueError, tries = MAX_MULTIPLE_CHOICE_ATTEMPTS)
   @override
   def sample_choice(
       self,
@@ -140,3 +145,131 @@ class OllamaLanguageModel(language_model.LanguageModel):
       self._measurements.publish_datum(self._channel, {"choices_calls": 1})
     debug = {}
     return idx, responses[idx], debug
+
+class OllamaProbs(OllamaLanguageModel):
+  """Language model using custom API call to provide a multiple-choice response with logits.
+  
+  Depends on the Ollama fork from [yumozi/ollama](https://github.com/yumozi/ollama) that
+  returns probabilities of the next token when the API is called."""
+  def __init__(
+      self,
+      model_name: str,
+      *,
+      system_message: str = SYSTEM_MESSAGE,
+      measurements: measurements_lib.Measurements | None = None,
+      channel: str = language_model.DEFAULT_STATS_CHANNEL,
+      **kwargs
+  ):
+    
+    super().__init__(model_name=model_name,
+                     system_message=system_message,
+                     measurements=measurements,
+                     channel=channel,
+                     streaming=False)
+    self._client = None
+    self.url = 'http://localhost:11434/api/generate'
+
+  @override
+  def sample_text(
+      self,
+      prompt: str,
+      **kwargs
+  ):
+    prompt_with_system_message = f"{self._system_message}\n\n{prompt}"
+
+    data = {
+        "model": self._model_name,
+        "prompt": prompt_with_system_message,
+        "options": {
+          "n_probs": 50,
+          "num_predict": 2
+        }
+    }
+
+    data_json = json.dumps(data)
+
+    json_response = requests.post(self.url, data=data_json)
+    json_iter = json_response.iter_lines()
+
+    response = ''
+
+    if json_response.status_code == 200:
+      answer_line = next(json_iter)
+      answer_json = json.loads(answer_line.decode('utf-8'))
+      if 'error' in answer_json:
+        response = 'Error: ' + answer_json['error']
+      else:
+        response = answer_json['response']
+
+    if self._measurements is not None:
+      self._measurements.publish_datum(
+          self._channel, {"raw_text_length": len(response)}
+      )
+    return response
+
+  @retry(ValueError, tries=MAX_MULTIPLE_CHOICE_ATTEMPTS)
+  @override
+  def sample_choice(
+    self,
+    prompt: str,
+    responses: Sequence[str] | None = None,
+    **kwargs
+  ):
+    
+    prompt_with_system_message = f"{self._system_message}\n\n{prompt}"
+
+    data = {
+        "model": self._model_name,
+        "prompt": prompt_with_system_message,
+        "options": {
+          "n_probs": 50,
+          "num_predict": 2
+        }
+    }
+
+    query_tokens = responses
+
+    data_json = json.dumps(data)
+
+    json_response = requests.post(self.url, data=data_json)
+    json_iter = json_response.iter_lines()
+
+    response = ''
+    p = {}
+
+    if json_response.status_code == 200:
+      answer_line = next(json_iter)
+      answer_json = json.loads(answer_line.decode('utf-8'))
+      if 'error' in answer_json:
+        response = 'Error: ' + answer_json['error']
+      else:
+        response = answer_json['response']
+        prob_line = next(json_iter)
+        prob_json = json.loads(prob_line.decode('utf-8'))
+        probabilities = prob_json['completion_probabilities'][0]['probs']
+
+        if query_tokens is not None:
+          for token in query_tokens:
+            for prob in probabilities:
+              if prob['tok_str'] == token:
+                p[token] = prob['prob']
+                break
+    else:
+      response = 'Error: ' + str(json_response.status_code)
+
+    if self._measurements is not None:
+      self._measurements.publish_datum(self._channel, {"choices_calls": 1})
+
+
+    import random
+    
+    answer = random.choices(list(p.keys()), weights=list(p.values()))[0]
+    try:
+      idx = responses.index(answer)
+    except ValueError:
+      raise language_model.InvalidResponseError(
+          f"Invalid response: {answer}. "
+          f"LLM Input: {prompt}\nLLM Output: {response}"
+      ) from None
+    
+    return idx, responses[idx], p

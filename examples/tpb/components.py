@@ -25,6 +25,47 @@ from examples.tpb import utils
 
 MAX_JSONIFY_ATTEMPTS = 5
 
+class Situation(component.Component):
+  """Determine the situation an agent is in."""
+  def __init__(
+      self,
+      model: language_model.LanguageModel,
+      config: tpb_agent.AgentConfig,
+      num_memories: int = 10):
+    """Initialize the situation component.
+    
+    Args:
+      model: The LLM.
+      config: The agent config.
+      num_memories: How many memories to recall."""
+    
+    self._state = ""
+    self._observation = ""
+    self._model = model
+    self._config = config
+    self._memory = config.memory
+    self._num_memories = num_memories
+
+  def name(self) -> str:
+    return "Situation"
+  
+  def state(self) -> str:
+    return self._state
+
+  def observe(self, observation: str) -> None:
+    self._observation = observation
+
+  def update(self) -> None:
+    mems = "\n".join(self._memory.retrieve_recent(
+      k=self._num_memories))
+    
+    prompt = interactive_document.InteractiveDocument(model=self._model)
+    
+    prompt.statement(f"Memories of {self._config.name}: {mems}")
+    prompt.statement(f"Current observation: {self._observation}")
+
+
+
 class TPBComponent(component.Component):
   """Theory of Planned Behaviour component shared structure."""
   def __init__(
@@ -190,6 +231,7 @@ class Behaviour(TPBComponent):
       name: str,
       model: language_model.LanguageModel,
       config: tpb_agent.AgentConfig,
+      components: Sequence[component.Component] | None = None,
       num_memories: int = 100,
       num_behavs: int = 5,
       clock_now: Callable[[], datetime.datetime] | None = None,
@@ -207,10 +249,14 @@ class Behaviour(TPBComponent):
       num_behavs: The number of behaviours to generate.
       clock_now: Callback for the game clock.
       verbose: Whether to print the state."""
-    super().__init__(name=name, model=model, config=config, num_memories=num_memories,
-                     clock_now=clock_now, verbose=verbose)
+    super().__init__(name=name, model=model, config=config, components=components, 
+                     num_memories=num_memories, clock_now=clock_now, verbose=verbose)
     self._num_behavs = num_behavs
+    self._observation = ""
 
+  def observe(self, observation: str) -> None:
+    self._latest_observation = "\n".join()
+  
   def jsonify(self) -> None:
 
     behaviour_list = []
@@ -230,6 +276,7 @@ class Behaviour(TPBComponent):
   def _update(self):
 
     question = (
+      f"Current situation: {self._latest_observation}"
       "Instructions: \n"
       f"Given the memories above, generate a list of {self._num_behavs} potential "
       f"behaviours above that {self._agent_name} can take in response to the situation. "

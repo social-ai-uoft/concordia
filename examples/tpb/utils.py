@@ -2,9 +2,10 @@ import datetime
 import json
 import os
 import pickle
-
 import numpy as np
+
 from numpy.typing import ArrayLike
+from typing import Literal
 
 from concordia.agents import basic_agent
 from concordia.associative_memory import formative_memories, associative_memory, blank_memories
@@ -14,9 +15,12 @@ from concordia.typing import component
 # region: Basic helper functions #
 ##################################
 
+# Valid arguments for pronoun
+Case = Literal["nominative", "oblique", "genitive", "genitive-s"]
+
 def pronoun(
     gendered: basic_agent.BasicAgent | formative_memories.AgentConfig | str,
-    case: str = "nominative") -> str:
+    case: Case) -> str:
   """Gets the pronoun for the specified gender.
   
   By default, uses the `gender` property if the input object (e.g., BasicAgent or AgentConfig) has one;
@@ -114,7 +118,10 @@ def normalize(x: ArrayLike):
 # region Loading mems/components #
 ##################################
 
-def save_memories(file_path: str | os.PathLike, mem: associative_memory.AssociativeMemory) -> None:
+def save_memories(
+    file_path: str | os.PathLike, 
+    mem: associative_memory.AssociativeMemory
+) -> None:
   """Saves the memory to a pickle file.
   
   Args:
@@ -125,17 +132,26 @@ def save_memories(file_path: str | os.PathLike, mem: associative_memory.Associat
       'data': mem.get_data_frame()
     }, path)
 
-def load_memories(file_path: str | os.PathLike, mem: associative_memory.AssociativeMemory | None = None, **kwargs) -> associative_memory.AssociativeMemory:
+def load_memories(
+    file_path: str | os.PathLike, 
+    mem: associative_memory.AssociativeMemory | None = None, 
+    **kwargs
+) -> associative_memory.AssociativeMemory:
   """Load prebuilt memories from file.
   
   Args:
     file_path: The path of the file containing the memory data.
     mem: (Optional) An `AssociativeMemory` object into which memories can be loaded into.
 
-  NOTE:
-    `load_memories()` expects either keyword parameters necessary to construct a memory, or a prebuilt memory.
-    If both are provided, the memory will be built using the prebuilt memory constructor. However, if no
-    prebuilt memory is provided and no memory constructor parameters are provided, then this function will fail.
+  Keyword args:
+    model: 
+
+  Returns:
+    AssociativeMemory: A memory object with the saved memories.
+
+  NOTE: `load_memories()` expects either keyword parameters necessary to construct a memory, or a prebuilt memory. 
+  If both are provided, the memory will be built using the prebuilt memory constructor. However, if no prebuilt 
+  memory is provided and no memory constructor parameters are provided, then this function will fail.
     """
   
   if mem is None:
@@ -150,7 +166,7 @@ def load_memories(file_path: str | os.PathLike, mem: associative_memory.Associat
     ).make_blank_memory()
   else:
     # Otherwise, use the provided memory
-    assert mem is not None, "If no memory parameters are provided, an `AssociativeMemory` object must be provided."
+    assert isinstance(mem, associative_memory.AssociativeMemory), "If no memory parameters are provided, an AssociativeMemory object must be provided."
   
   with open(file_path, 'rb') as path:
     memory_bank = pickle.load(path)['data']
@@ -166,19 +182,29 @@ def load_memories(file_path: str | os.PathLike, mem: associative_memory.Associat
   
   return mem
 
-def save_component(file_path: str | os.PathLike, component: component.Component) -> None:
+def save_component(
+    file_path: str | os.PathLike, 
+    component: component.Component
+) -> None:
   """Save a component's state for reuse later."""
   with open(file_path, 'wb') as path:
     pickle.dump({
       'state': component.state(),
      }, path)
     
-def load_component(file_path: str | os.PathLike, component: component.Component | None = None, **kwargs) -> component.Component:
+def load_component(
+    file_path: str | os.PathLike, 
+    component: component.Component | None = None, 
+    **kwargs
+) -> component.Component:
   """Load a component's state from file.
   
   Args:
     file_path: The path of the file containing the component state.
-    component: (Optional) An `AssociativeMemory` object into which memories can be loaded into.
+    component: (Optional) The component to load the saved state onto.
+
+  Returns:
+    component: The 
 
   NOTE:
     `load_component()` expects either a component to be provided, or:
@@ -191,7 +217,7 @@ def load_component(file_path: str | os.PathLike, component: component.Component 
   if component is None:
     import warnings
     import importlib
-    # Please don't do this
+    # This is probably a terrible idea.
     warnings.formatwarning = lambda message, category, filename, lineno, line: '%s:%s: %s:%s\n' % (filename, lineno, category.__name__, message)
     warnings.warn(
       " Building a component from kwargs is discouraged and may be removed in the future.",

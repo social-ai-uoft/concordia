@@ -9,6 +9,7 @@ import pickle
 
 from typing import Any, Iterable
 
+from concordia.agents import basic_agent
 from concordia.associative_memory import (
   associative_memory, formative_memories,
   blank_memories, importance_function
@@ -67,8 +68,8 @@ class AgentConfig:
       else:
         self.memory: associative_memory.AssociativeMemory = None
 
-  def add_memory(self, memory: associative_memory.AssociativeMemory):
-    """Memory setter."""
+  def add_memory_object(self, memory: associative_memory.AssociativeMemory):
+    """Provide a memory after initialization."""
     self.memory = memory
 
   def save_config(self, file_path = str | os.PathLike) -> None:
@@ -94,7 +95,7 @@ class AgentConfig:
       config_dict = pickle.load(f)
     return cls(**config_dict)
 
-class TPBAgent(agent.GenerativeAgent):
+class TPBAgent(basic_agent.BasicAgent):
   """
   Agent that implements a TPB model.
   """
@@ -103,8 +104,23 @@ class TPBAgent(agent.GenerativeAgent):
       config: AgentConfig,
       full_model: component.Component,
       clock: clock.GameClock,
+      num_memories: int = 10,
+      update_interval: datetime.timedelta = datetime.timedelta(hours=1),
+      verbose: bool = False
   ):
+    
+    super().__init__(
+      model=config.extras['model'],
+      memory=config.memory,
+      agent_name=config.name,
+      clock=clock,
+      components=[],
+      update_interval=update_interval,
+      num_memories_retrieved=num_memories,
+      verbose=verbose
+    )
 
+    self._goal = config.goal
     self._config = config
     self._clock = clock
     self._model = config.extras['model']
@@ -121,6 +137,9 @@ class TPBAgent(agent.GenerativeAgent):
 
   def update(self) -> None:
     self._full_model.update()
+    
+  def update_goal(self, new_goal: str) -> None:
+    self._goal = new_goal
 
   def get_last_log(self):
     if not self._log:
@@ -177,5 +196,4 @@ class TPBAgent(agent.GenerativeAgent):
     self._log.append(current_log)
 
   def observe(self, observation: str) -> None:
-
     self._full_model.observe(observation=observation)

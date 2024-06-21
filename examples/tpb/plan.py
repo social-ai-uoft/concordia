@@ -46,7 +46,8 @@ class TPBPlan(TPBComponent):
   def _update(self):
 
     goal_state = self._goal.state() if self._goal is not None else ""
-
+    print(self._goal)
+    print(goal_state)
     memories = "\n".join(
       self._memory.retrieve_associative(
         goal_state,
