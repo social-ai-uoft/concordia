@@ -93,7 +93,7 @@ class EpisodicMemory(component.Component):
   def name(self):
     return 'memory'
 
-  def observe(self, observation: str, wm_loc = "obs_2") -> None:
+  def observe(self, observation: str, wm_loc = "obs_1") -> None:
     """Stores the observation in the episodic memory."""
 
     # Set working memory value.

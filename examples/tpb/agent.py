@@ -16,6 +16,7 @@ from concordia.associative_memory import (
 )
 from concordia.document import interactive_document
 from concordia.typing import agent, component, clock
+from concordia.utils import helper_functions
 
 from examples.tpb import utils
 
@@ -66,8 +67,8 @@ class AgentConfig:
       else:
         self.memory: associative_memory.AssociativeMemory = None
 
-  def add_memory(self, memory: associative_memory.AssociativeMemory):
-    """Memory setter."""
+  def add_memory_object(self, memory: associative_memory.AssociativeMemory):
+    """Provide a memory after initialization."""
     self.memory = memory
 
   def save_config(self, file_path = str | os.PathLike) -> None:
@@ -112,7 +113,7 @@ class TPBAgent(basic_agent.BasicAgent):
       memory=config.memory,
       agent_name=config.name,
       clock=clock,
-      components=None,
+      components=[],
       update_interval=update_interval,
       num_memories_retrieved=num_memories,
       verbose=verbose
@@ -127,7 +128,7 @@ class TPBAgent(basic_agent.BasicAgent):
   def act(
       self,
       action_spec: agent.ActionSpec = agent.DEFAULT_ACTION_SPEC
-  ):
+  ) -> str:
     
     prompt = interactive_document.InteractiveDocument(model=self._model)
 
@@ -139,6 +140,18 @@ class TPBAgent(basic_agent.BasicAgent):
       f"{intention}\n\n"
       f"{plan}\n\n"
     )
+
+    call_to_action = action_spec.call_to_action.format(
+      agent_name=self._agent_name,
+      timedelta=helper_functions.timedelta_to_readable_str(
+        self._clock.get_step_size()
+      ),
+    )
+
+    action = prompt.open_question(call_to_action)
+
+    return action
+    
 
     
     
